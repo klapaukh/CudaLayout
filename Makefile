@@ -36,8 +36,8 @@
 EXECUTABLE	:= layout
 CUFILES	        := 
 CU_DEPS 	:= 
-CCFILES		:= main.c
-
+CCFILES		:=
+CFILES		:= main.c
 ################################################################################
 # Targets and rules
 include /opt/local/share/cuda-sdk-4.0-common.mk
