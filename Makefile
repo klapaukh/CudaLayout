@@ -38,6 +38,8 @@ CUFILES	        :=
 CU_DEPS 	:= 
 CCFILES		:=
 CFILES		:= main.c
+LINKFLAGS	:= -lexpat
+
 ################################################################################
 # Targets and rules
 include /opt/local/share/cuda-sdk-4.0-common.mk
