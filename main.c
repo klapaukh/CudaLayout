@@ -20,5 +20,8 @@ int main(int argc, char** argv){
     return EXIT_FAILURE;
   }
   
+  //Finished reading the xml, so free the memory
+  XML_ParserFree(p);
+
   return EXIT_SUCCESS;
 }
