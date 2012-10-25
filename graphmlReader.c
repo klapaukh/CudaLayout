@@ -4,8 +4,9 @@
 #include <expat.h>
 #include "graphmlReader.h"
 
+//MAX_LEN is such that the index will fit into a 8 bits
 #define BUFF_SIZE 1024
-#define MAX_LEN 300
+#define MAX_LEN 200
 #define ID_LEN 6
 
 void startTag(void*, const char*, const char**);
@@ -40,7 +41,7 @@ void startTag(void* data, const char* element, const char** attributes){
 	  printf("Too many nodes in file. Greater than MAX_LEN (%d)\n", MAX_LEN);
 	  return;
 	}
-	printf("Node: %s\n", attributes[i+1]);
+	//printf("Node: %s\n", attributes[i+1]);
 	strncpy(graph->nodes[graph->numNode].id, attributes[i+1], ID_LEN);
 	graph->numNode++;
       }
@@ -53,15 +54,15 @@ void startTag(void* data, const char* element, const char** attributes){
     }
     for(i=0; attributes[i] != NULL; i+=2){
       if(strcmp(attributes[i],"id") == 0){
-	printf("Edge: %s\n", attributes[i+1]);
+	//printf("Edge: %s\n", attributes[i+1]);
 	strncpy(graph->edges[graph->numEdge].id, attributes[i+1], ID_LEN);
       }
       if(strcmp(attributes[i], "source")){
-	printf("Source: %s\n", attributes[i+1]);
+	//printf("Source: %s\n", attributes[i+1]);
 	strncpy(graph->edges[graph->numEdge].source, attributes[i+1], ID_LEN);
       }
       if(strcmp(attributes[i], "target")){
-	printf("Target: %s\n", attributes[i+1]);
+	//printf("Target: %s\n", attributes[i+1]);
 	strncpy(graph->edges[graph->numEdge].target, attributes[i+1], ID_LEN);
       }
     }
@@ -122,5 +123,63 @@ graph* read(char* filename){
   fclose(xmlFile);
   XML_ParserFree(p);
 
-  return NULL;
+  //data should now be sensible 
+  graph* g = graph_create();
+  g->numNodes = data.numNode;
+  g->numEdges = data.numEdge;
+  g->numEdgeLabels = data.numEdge;
+  g->numNodeLabels = data.numNode;
+  g->nodeLabels = (char**)malloc(sizeof(char*)* data.numNode);
+  g->edgeLabels = (char**)malloc(sizeof(char*)* data.numEdge+1);
+  g->nodes = (node*)malloc(sizeof(node) * data.numNode);
+  g->edges = (unsigned char*)malloc(sizeof(unsigned char)*data.numEdge * data.numEdge);
+
+  int i;
+  g->edgeLabels[0] = (char*)malloc(sizeof(char));
+  *(g->edgeLabels[0]) = '\0';
+  for(i = 0; i< data.numEdge;i++){
+    g->edgeLabels[i+1] = (char*)malloc(sizeof(char)* 6);
+    strncpy(g->edgeLabels[i+1],data.edges[i].id,6);
+  }
+  for(i =0; i < data.numNode;i++){
+    //Set the labels
+    g->nodeLabels[i] = (char*)malloc(sizeof(char) * 6);
+    strncpy(g->nodeLabels[i],data.nodes[i].id,6);
+
+    //Initialise the nodes
+    g->nodes[i].label = i;
+  }
+
+  //Initialise all edges to 0
+  int j;
+  for(i =0; i < data.numNode; i++){
+    for(j=0; j < data.numNode; j++){
+      g->edges[i+j*g->numEdges] = 0;
+    }
+  }
+  
+  //Find the edges which actually exist!
+  for(i=0; i < data.numEdge;i++){
+    int sourceid = -1;
+    int targetid = -1; 
+    for(j=0;j < data.numNode;j++){
+      if(strcmp(data.edges[i].source, data.nodes[j].id) == 0){
+	sourceid = j;
+      }
+      if(strcmp(data.edges[i].target, data.nodes[j].id) == 0){
+	targetid = j;
+      }
+    }
+    if( sourceid == -1 || targetid == -1){
+      printf("Could not find nodes for edge (%s,%s). Failed to create  graph\n",
+	     data.edges[i].source, data.edges[i].target);
+      return NULL;
+    }
+    g->edges[i+j*g->numEdges] = i;
+    g->edges[j+i*g->numEdges] = i;
+  }
+
+  //Graph is now actually working
+  printf("Created graph with %d nodes and %d edges\n", g->numNodes, g->numEdges);
+  return g;
 }
