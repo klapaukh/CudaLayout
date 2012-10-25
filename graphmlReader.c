@@ -96,7 +96,11 @@ int read(char* filename){
     }
     
     //Successfully read something, time to parse, woo!
-    XML_Parse(p, buff, len, !len); // len == 0 => finished => need to negate
+    if(!XML_Parse(p, buff, len, !len)){ // len == 0 => finished => need to negate
+      fprintf(stderr, "Parse error at line %d:\n%s\n", XML_GetCurrentLineNumber(p), 
+	      XML_ErrorString(XML_GetErrorCode(p)));
+      return 0;
+    }
   }
   if(len !=0){
     XML_Parse(p, buff,0, 1); //It's definitely over
