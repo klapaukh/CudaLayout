@@ -5,6 +5,7 @@
 #include "graphmlReader.h"
 
 #define BUFF_SIZE 1024
+#define MAX_LEN 300
 #define ID_LEN 6
 
 typedef struct edge {
@@ -20,8 +21,8 @@ typedef struct node {
 typedef struct graphData {
   int numNode;
   int numEdge;
-  node nodes[300];
-  edge edges[300];
+  node nodes[MAX_LEN];
+  edge edges[MAX_LEN];
 } graphData;
 
 void startTag(void* data, const char* element, const char** attributes){
@@ -32,6 +33,10 @@ void startTag(void* data, const char* element, const char** attributes){
     int i=0;
     for(i=0; attributes[i] != NULL; i+=2){
       if(strcmp(attributes[i],"id") == 0){
+	if(graph->numNode >= MAX_LEN){
+	  printf("Too many nodes in file. Greater than MAX_LEN (%d)\n", MAX_LEN);
+	  return;
+	}
 	printf("Node: %s\n", attributes[i+1]);
 	strncpy(graph->nodes[graph->numNode].id, attributes[i+1], ID_LEN);
 	graph->numNode++;
@@ -39,6 +44,10 @@ void startTag(void* data, const char* element, const char** attributes){
     }
   }else if(strcmp(element, "edge") == 0){
     int i=0;
+    if(graph->numEdge >= MAX_LEN){
+      printf("Too many edges in file. Greater than MAX_LEN (%d)\n", MAX_LEN);
+      return;
+    }
     for(i=0; attributes[i] != NULL; i+=2){
       if(strcmp(attributes[i],"id") == 0){
 	printf("Edge: %s\n", attributes[i+1]);
