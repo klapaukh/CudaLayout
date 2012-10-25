@@ -11,7 +11,12 @@ int main(int argc, char** argv){
   }
 
   graph* graph = read(argv[1]);
+  if(graph == NULL){
+    printf("Creating a graph failed. Terminating");
+    return EXIT_FAILURE;
+  }
 
+  graph_free(graph);
   return EXIT_SUCCESS;
 
   
