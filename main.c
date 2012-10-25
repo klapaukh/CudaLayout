@@ -9,18 +9,28 @@ int main(int,char**);
 void startTag(void*, const char*, const char**);
 void endTag(void*, const char*);
 
-
-
 void startTag(void* data, const char* element, const char** attributes){
   (void)data;
   if(strcmp(element, "node")==0){
     int i=0;
     for(i=0; attributes[i] != NULL; i+=2){
       if(strcmp(attributes[i],"id") == 0){
-	printf("Node: %s", attributes[i+1]);
+	printf("Node: %s\n", attributes[i+1]);
       }
     }
   }else if(strcmp(element, "edge") == 0){
+    int i=0;
+    for(i=0; attributes[i] != NULL; i+=2){
+      if(strcmp(attributes[i],"id") == 0){
+	printf("Edge: %s\n", attributes[i+1]);
+      }
+      if(strcmp(attributes[i], "source")){
+	printf("Source: %s\n", attributes[i+1]);
+      }
+      if(strcmp(attributes[i], "target")){
+	printf("Target: %s\n", attributes[i+1]);
+      }
+    }
   }
 }
 
@@ -68,7 +78,6 @@ int main(int argc, char** argv){
   if(len !=0){
     XML_Parse(p, buff,0, 1); //It's definitely over
   }
-  
   
   //Finished reading the xml, so free the memory
   fclose(xmlFile);
