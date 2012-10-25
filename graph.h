@@ -17,10 +17,11 @@ typedef struct node{
 
 typedef struct graph{
   char** nodeLabels;
-  char** edgeLables;
+  char** edgeLabels;
   char*  edges;
   node*  nodes;
 } graph;
 
+void graph_free(graph*);
 
 #endif
