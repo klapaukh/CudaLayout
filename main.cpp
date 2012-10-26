@@ -22,7 +22,7 @@ int main(int argc, char** argv){
     It is possible to lay it out now
   */
   
-  graph_layout(g,1920,1080,100);
+  graph_layout(g,1920,1080,10000);
 
   graph_toSVG(g, "test.svg");
   graph_free(g);
