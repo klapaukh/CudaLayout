@@ -4,7 +4,7 @@
 #include "layout.h"
 
 __global__ void layout(node* nodes, unsigned char* edges, int numNodes, int width, int height, int iterations){
-  int me = threadIdx.x;
+  int me = blockIdx.x * 8 + threadIdx.x;
   
   float fx, fy;
   for(int z=0;z<iterations;z++){
@@ -109,8 +109,9 @@ void graph_layout(graph* g, int width, int height, int iterations){
 
   
   /*COMPUTE*/
-  int nt = g->numNodes;
-  layout<<<1,nt>>>(nodes_device, edges_device, g->numNodes,width,height, iterations);
+  int nth = g->numNodes % 8;
+  int nbl = ceil(g->numNodes / 8);
+  layout<<<nbl,nth>>>(nodes_device, edges_device, g->numNodes,width,height, iterations);
   
   /*After computation you must copy the results back*/
   err = cudaMemcpy(g->nodes, nodes_device, sizeof(node)* g->numNodes, cudaMemcpyDeviceToHost);
