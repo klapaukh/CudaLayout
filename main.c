@@ -2,6 +2,7 @@
 #include <stdlib.h>
 
 #include "graphmlReader.h"
+#include "layout.h"
 
 int main(int argc, char** argv){
   /*Check arguments to make sure you got a file*/
