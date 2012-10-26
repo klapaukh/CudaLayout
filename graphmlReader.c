@@ -130,9 +130,9 @@ graph* read(char* filename){
   g->numEdgeLabels = data.numEdge;
   g->numNodeLabels = data.numNode;
   g->nodeLabels = (char**)malloc(sizeof(char*)* data.numNode);
-  g->edgeLabels = (char**)malloc(sizeof(char*)* data.numEdge+1);
+  g->edgeLabels = (char**)malloc(sizeof(char*)* (data.numEdge+1));
   g->nodes = (node*)malloc(sizeof(node) * data.numNode);
-  g->edges = (unsigned char*)malloc(sizeof(unsigned char)*data.numEdge * data.numEdge);
+  g->edges = (unsigned char*)malloc(sizeof(unsigned char)*data.numNode * data.numNode);
 
   int i;
   g->edgeLabels[0] = (char*)malloc(sizeof(char));
