@@ -34,7 +34,7 @@
 ################################################################################
 
 EXECUTABLE	:= layout
-CUFILES	        := 
+CUFILES	        := layout.cu
 CU_DEPS 	:= 
 CCFILES		:=
 CFILES		:= main.c graphmlReader.c graph.c
