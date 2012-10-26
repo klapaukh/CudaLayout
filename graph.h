@@ -32,5 +32,8 @@ typedef struct graph{
 
 graph* graph_create(void);
 void graph_free(graph*);
+void graph_toSVG(graph*, char*);
+void graph_initRandom(graph*, int, int, int, int);
+void graph_layout(graph*,int,int);
 
 #endif
