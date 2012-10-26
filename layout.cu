@@ -9,22 +9,27 @@ __global__ void layout(node* nodes, unsigned char* edges, int numNodes, int widt
   float fx, fy;
   for(int z=0;z<iterations;z++){
     for(int i =0; i < numNodes; i++){
+      if( i == me){
+	continue;
+      }
       fx = fy = 0;
       //Work out the repulsive coulombs law force
       float dx = nodes[me].x - nodes[i].x;
       float dy = nodes[me].y - nodes[i].y;
       float dist = sqrtf(dx*dx + dy *dy);
       
-      float ke = 0.0005;
-      float q1 = 0.3, q2 = 0.3;
+      float ke = 0.05;
+      float q1 = 3, q2 = 3;
 
-      if(dist < 5){
+      if(dist < 5 || !isfinite(dist)){
 	dist = 5;
       }
       float f = ke*q1*q2/ (dist*dist);
       //printf("%d", f);
-      fx = dx * f;
-      fy = dy * f;
+      if(isfinite(f)){
+	fx = dx * f;
+	fy = dy * f;
+      }
       
       if(edges[i + me * numNodes]){
 	//Attractive spring force
@@ -32,28 +37,32 @@ __global__ void layout(node* nodes, unsigned char* edges, int numNodes, int widt
 	float naturalWidth = nodes[i].width;
 	float naturalHeight = nodes[i].height;
 	float f = 2;
-	//fx += (-f) * (dx - naturalWidth);
-	//fy += (-f) * (dy - naturalHeight);      
+	fx += (-f) * (dx - naturalWidth);
+	fy += (-f) * (dy - naturalHeight);      
       }
       //Move
       //F=ma => a = F/m
-      float mass = 20;
+      float mass = 2000;
       float ax = fx / mass;
       float ay = fy / mass;
       if(ax > width/3){
 	ax = width/3;
       }else if(ax < -width/3){
 	ax = -width/3;
+      }else if(!isfinite(ax)){
+	ax = 0;
       }
       
       if(ay > height/3){
 	ay = height/3;
       }else if(ay < -height/3){
 	ay = -height/3;
+      }else if(!isfinite(ay)){
+	ay = 0;
       }
 
-      nodes[me].nextX = nodes[me].x + dx;
-      nodes[me].nextY = nodes[me].y + dy;
+      nodes[me].nextX = nodes[me].x + nodes[me].dx;
+      nodes[me].nextY = nodes[me].y + nodes[me].dy;
       nodes[me].nextdy =nodes[me].dy + ay;
       nodes[me].nextdx =nodes[me].dx + ax;
       
