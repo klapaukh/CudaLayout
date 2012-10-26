@@ -38,4 +38,5 @@ void graph_free(graph* g){
   if(g->nodes != NULL){
     free(g->nodes);
   }
+  free(g);
 }
