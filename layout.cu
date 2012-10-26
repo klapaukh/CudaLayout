@@ -3,46 +3,67 @@
 
 #include "layout.h"
 
-__global__ void layout(node* nodes, unsigned char* edges, int numNodes, int width, int height, int interations){
+__global__ void layout(node* nodes, unsigned char* edges, int numNodes, int width, int height, int iterations){
   int me = threadIdx.x;
   
   float fx, fy;
-  for(int i =0; i < numNodes; i++){
-    fx = fy = 0;
-    //Work out the repulsive coulombs law force
-    float dx = nodes[i].x - nodes[me].x;
-    float dy = nodes[i].y - nodes[me].y;
-    float dist = sqrtf(dx*dx + dy *dy);
+  for(int z=0;z<iterations;z++){
+    for(int i =0; i < numNodes; i++){
+      fx = fy = 0;
+      //Work out the repulsive coulombs law force
+      float dx = nodes[me].x - nodes[i].x;
+      float dy = nodes[me].y - nodes[i].y;
+      float dist = sqrtf(dx*dx + dy *dy);
+      
+      float ke = 5;
+      float q1 = 3, q2 = 3;
 
-    float ke = 50000;
-    float q1 = 3, q2 = 3;
-    float f = ke*q1*q2/ (dist*dist);
-     
-    fx = dx * f;
-    fy = dx * y;
+      if(dist < 5){
+	dist =5;
+      }
+      float f = ke*q1*q2/ (dist*dist);
     
-    if(edges[i + me * numNodes]){
-      //Attractive spring force
-      //      float naturalDistance = nodes[i].width + nodes[me].height; //TODO different sizes
-      float naturalWidth = nodes[i].width;
-      float naturalHeight = nodes[i].height;
-      float f = 0.2;
-      fx += (-f) * (dx - naturalWidth);
-      fy += (-f) * (dy - naturalHeight);      
+      fx = dx * f;
+      fy = dy * f;
+      
+      if(edges[i + me * numNodes]){
+	//Attractive spring force
+	//float naturalDistance = nodes[i].width + nodes[me].height; //TODO different sizes
+	float naturalWidth = nodes[i].width;
+	float naturalHeight = nodes[i].height;
+	float f = 0.2;
+	fx += (-f) * (dx - naturalWidth);
+	fy += (-f) * (dy - naturalHeight);      
+      }
+      //Move
+      //F=ma => a = F/m
+      float mass = 2;
+      float ax = fx / mass;
+      float ay = fy / mass;
+      if(ax > width/3){
+	ax = width/3;
+      }else if(ax < -width/3){
+	ax = -width/3;
+      }
+      
+      if(ay > height/3){
+	ay = height/3;
+      }else if(ay < -height/3){
+	ay = -height/3;
+      }
+
+      nodes[me].nextX = nodes[me].x + dx;
+      nodes[me].nextY = nodes[me].y + dy;
+      nodes[me].nextdy =nodes[me].dy + ay;
+      nodes[me].nextdx =nodes[me].dx + ax;
+      
+      //Update
+      nodes[me].x = nodes[me].nextX;
+      nodes[me].y = nodes[me].nextY;
+      nodes[me].dx = nodes[me].nextdx;
+      nodes[me].dy = nodes[me].nextdy;
     }
-    //Move
-    //F=ma => a = F/m
-    float mass = 2;
-    float ax = fx / mass;
-    float ay = fy / mass;
-    
-    nodes[me].nextdy =nodes[me].dy + ay;
-    nodes[me].nextdx =nodes[me].dx + ax;
-    nodes[me].nextX = nodes[me].x + dx;
-    nodes[me].nextY = nodes[me].y + dy;
-    //Update
-  }
-
+  } 
 }
 
 
