@@ -43,3 +43,4 @@ LINKFLAGS	:= -lexpat
 ################################################################################
 # Targets and rules
 include /opt/local/share/cuda-sdk-4.0-common.mk
+#include /local/scratch/roma/common/common.mk
