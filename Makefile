@@ -35,9 +35,9 @@
 
 EXECUTABLE	:= layout
 CUFILES	        := layout.cu
-CU_DEPS 	:= 
-CCFILES		:=
-CFILES		:= graphmlReader.c graph.c main.c
+CU_DEPS 	:= layout.h
+CCFILES		:=graphmlReader.c graph.c main.c
+CFILES		:= 
 LINKFLAGS	:= -lexpat
 
 ################################################################################

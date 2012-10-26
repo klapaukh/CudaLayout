@@ -5,11 +5,12 @@
 
 __global__ void layout(node* nodes, unsigned char* edges, int width, int height){
   int idx = threadIdx.x;
-  nodes[idx].x++;
+  nodes[idx].x = width;
 }
 
 
-extern "C" void graph_layout(graph* g, int width, int height){
+//extern "C" 
+void graph_layout(graph* g, int width, int height){
   /*
     need to allocate memory for nodes and edges on the device
   */
@@ -41,13 +42,11 @@ extern "C" void graph_layout(graph* g, int width, int height){
   }
 
   
-
+  /*COMPUTE*/
+  int nt = g->numNodes;
+  layout<<<1,nt>>>(nodes_device, edges_device,width,height);
+  
   /*After computation you must copy the results back*/
-  err = cudaMemcpy(g->edges, edges_device, sizeof(unsigned char)* g->numNodes* g->numNodes, cudaMemcpyDeviceToHost);
-  if(err != cudaSuccess){
-    printf("Error return from cudaMemcpy edges to device\n");
-  }
-
   err = cudaMemcpy(g->nodes, nodes_device, sizeof(node)* g->numNodes, cudaMemcpyDeviceToHost);
   if(err != cudaSuccess){
     printf("Error return from cudaMemcpy nodes to device\n");

@@ -3,7 +3,7 @@
 
 #include "graph.h"
 
-
-extern "C" void graph_layout(graph*, int, int);
+//extern "C"
+void graph_layout(graph*, int, int);
 
 #endif
