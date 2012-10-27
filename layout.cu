@@ -82,12 +82,13 @@ __global__ void layout(node* nodes, unsigned char* edges, int numNodes, int widt
     }
     
     //But wait - There are bounds to check!
+    //These aren't right!!!
     float collided = 0.9; //coeeficient of restitution
     if(nodes[me].nextX + nodes[me].width/2 > width){
       nodes[me].nextX = 2* width - nodes[me].nextX - nodes[me].width/2;
       nodes[me].nextdx *= collided;
     }else if(nodes[me].nextX -nodes[me].width/2 < 0){
-      nodes[me].nextX = -nodes[me].nextX + nodes[me].width/2;
+      nodes[me].nextX = -nodes[me].nextX + 2*nodes[me].width/2;
       nodes[me].nextdx *= collided;
     }
     
@@ -95,7 +96,7 @@ __global__ void layout(node* nodes, unsigned char* edges, int numNodes, int widt
 	nodes[me].nextY = 2*height - nodes[me].nextY - nodes[me].height/2;
 	nodes[me].nextdy *= collided;
     }else if(nodes[me].nextY - nodes[me].height/2<0){
-      nodes[me].nextY = -nodes[me].nextY + nodes[me].height/2;
+      nodes[me].nextY = -nodes[me].nextY + 2*nodes[me].height/2;
       nodes[me].nextdy *= collided;
     }
     
