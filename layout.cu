@@ -9,11 +9,11 @@ __global__ void layout(node* nodes, unsigned char* edges, int numNodes, int widt
   float fx, fy;
   float dampening = 0.9;
   for(int z=0;z<iterations;z++){
+    fx = fy = 0;
     for(int i =0; i < numNodes; i++){
       if( i == me){
 	continue;
       }
-      fx = fy = 0;
       //Work out the repulsive coulombs law force
       float dx = nodes[me].x - nodes[i].x;
       float dy = nodes[me].y - nodes[i].y;
@@ -28,8 +28,8 @@ __global__ void layout(node* nodes, unsigned char* edges, int numNodes, int widt
       float f = ke*q1*q2/ (dist*dist);
       //printf("%d", f);
       if(isfinite(f)){
-	fx = dx * f;
-	fy = dy * f;
+	fx += dx * f;
+	fy += dy * f;
       }
       
       if(edges[i + me * numNodes]){
@@ -41,70 +41,70 @@ __global__ void layout(node* nodes, unsigned char* edges, int numNodes, int widt
 	fx += (-f) * (dx - naturalWidth);
 	fy += (-f) * (dy - naturalHeight);      
       }
-      //Move
-      //F=ma => a = F/m
-      float mass = 2000;
-      float ax = fx / mass;
-      float ay = fy / mass;
-      if(ax > width/3){
-	ax = width/3;
-      }else if(ax < -width/3){
-	ax = -width/3;
-      }else if(!isfinite(ax)){
-	ax = 0;
-      }
-      
-      if(ay > height/3){
-	ay = height/3;
-      }else if(ay < -height/3){
-	ay = -height/3;
-      }else if(!isfinite(ay)){
-	ay = 0;
-      }
-
-      nodes[me].nextX = nodes[me].x + nodes[me].dx;
-      nodes[me].nextY = nodes[me].y + nodes[me].dy;
-      nodes[me].nextdy =nodes[me].dy*dampening + ay;
-      nodes[me].nextdx =nodes[me].dx*dampening + ax;
-      
-      //Make sure it won't be travelling too fast
-      if(nodes[me].nextdx > width/2){
-	nodes[me].nextdx = width/2;
-      }else if(nodes[me].nextdx < -width/2){
-	nodes[me].nextdx = -width/2;
-      }
-
-      if(nodes[me].nextdy > height / 2){
-	nodes[me].nextdy = height/2;
-      }else if(nodes[me].nextdy < -height/2){
+    }
+    //Move
+    //F=ma => a = F/m
+    float mass = 2000;
+    float ax = fx / mass;
+    float ay = fy / mass;
+    if(ax > width/3){
+      ax = width/3;
+    }else if(ax < -width/3){
+      ax = -width/3;
+    }else if(!isfinite(ax)){
+      ax = 0;
+    }
+    
+    if(ay > height/3){
+      ay = height/3;
+    }else if(ay < -height/3){
+      ay = -height/3;
+    }else if(!isfinite(ay)){
+      ay = 0;
+    }
+    
+    nodes[me].nextX = nodes[me].x + nodes[me].dx;
+    nodes[me].nextY = nodes[me].y + nodes[me].dy;
+    nodes[me].nextdy =nodes[me].dy*dampening + ay;
+    nodes[me].nextdx =nodes[me].dx*dampening + ax;
+    
+    //Make sure it won't be travelling too fast
+    if(nodes[me].nextdx > width/2){
+      nodes[me].nextdx = width/2;
+    }else if(nodes[me].nextdx < -width/2){
+      nodes[me].nextdx = -width/2;
+    }
+    
+    if(nodes[me].nextdy > height / 2){
+      nodes[me].nextdy = height/2;
+    }else if(nodes[me].nextdy < -height/2){
 	nodes[me].nextdy = -height/2;
-      }
-
-      //But wait - There are bounds to check!
-      float collided = 0.9; //coeeficient of restitution
-      if(nodes[me].nextX > width){
-	nodes[me].nextX = 2* width - nodes[me].nextX;
-	nodes[me].nextdx *= collided;
-      }else if(nodes[me].nextX < 0){
-	nodes[me].nextX = -nodes[me].nextX;
-	nodes[me].nextdx *= collided;
-      }
-
-      if(nodes[me].nextY > height){
+    }
+    
+    //But wait - There are bounds to check!
+    float collided = 0.9; //coeeficient of restitution
+    if(nodes[me].nextX > width){
+      nodes[me].nextX = 2* width - nodes[me].nextX;
+      nodes[me].nextdx *= collided;
+    }else if(nodes[me].nextX < 0){
+      nodes[me].nextX = -nodes[me].nextX;
+      nodes[me].nextdx *= collided;
+    }
+    
+    if(nodes[me].nextY > height){
 	nodes[me].nextY = 2*height - nodes[me].nextY;
 	nodes[me].nextdy *= collided;
-      }else if(nodes[me].nextY <0){
-	nodes[me].nextY = -nodes[me].nextY;
-	nodes[me].nextdy *= collided;
-      }
-      
-      //Update
-      nodes[me].x = nodes[me].nextX;
-      nodes[me].y = nodes[me].nextY;
-      nodes[me].dx = nodes[me].nextdx;
-      nodes[me].dy = nodes[me].nextdy;
+    }else if(nodes[me].nextY <0){
+      nodes[me].nextY = -nodes[me].nextY;
+      nodes[me].nextdy *= collided;
     }
-  } 
+    
+    //Update
+    nodes[me].x = nodes[me].nextX;
+    nodes[me].y = nodes[me].nextY;
+    nodes[me].dx = nodes[me].nextdx;
+    nodes[me].dy = nodes[me].nextdy;
+  }
 }
 
 
