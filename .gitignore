@@ -7,4 +7,6 @@ obj/
 *.swo
 a.out
 test.svg
+.cproject
+.project
 
