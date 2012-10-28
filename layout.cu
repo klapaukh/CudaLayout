@@ -6,6 +6,9 @@
 __global__ void layout(node* nodes, unsigned char* edges, int numNodes, int width, int height, int iterations){
   int me = blockIdx.x * 8 + threadIdx.x;
   
+  if(me >= numNodes){
+    return;
+  }
   float fx, fy;
   float dampening = 0.9;
   for(int z=0;z<iterations;z++){
@@ -141,8 +144,9 @@ void graph_layout(graph* g, int width, int height, int iterations){
 
   
   /*COMPUTE*/
-  int nth = g->numNodes % 8;
+  int nth = 8;
   int nbl = ceil(g->numNodes / 8.0);
+  printf("Graph has %d nodes with %d blocks and %d threads\n", g->numNodes, nbl, nth);
   layout<<<nbl,nth>>>(nodes_device, edges_device, g->numNodes,width,height, iterations);
   
   /*After computation you must copy the results back*/
