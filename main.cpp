@@ -17,17 +17,18 @@ int main(int argc, char** argv){
     return EXIT_FAILURE;
   }
  
-  int swidth = 100;
-  int sheight = 100;
+  int swidth = 1920;
+  int sheight = 1080;
   
   graph_initRandom(g,20,10,swidth,sheight);
   /*The graph is now is a legal state. 
     It is possible to lay it out now
   */
+  graph_toSVG(g, "before.svg", swidth, sheight);
   
   graph_layout(g,swidth,sheight,10000);
 
-  graph_toSVG(g, "test.svg",swidth,sheight);
+  graph_toSVG(g, "after.svg",swidth,sheight);
   graph_free(g);
   return EXIT_SUCCESS;
 

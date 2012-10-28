@@ -142,7 +142,7 @@ void graph_layout(graph* g, int width, int height, int iterations){
   
   /*COMPUTE*/
   int nth = g->numNodes % 8;
-  int nbl = ceil(g->numNodes / 8);
+  int nbl = ceil(g->numNodes / 8.0);
   layout<<<nbl,nth>>>(nodes_device, edges_device, g->numNodes,width,height, iterations);
   
   /*After computation you must copy the results back*/
