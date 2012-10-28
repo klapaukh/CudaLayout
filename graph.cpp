@@ -56,7 +56,7 @@ void graph_initRandom(graph* g,int width, int height, int screenWidth, int scree
   }
 }
 
-void graph_toSVG(graph* g, char* filename, int width, int height){
+void graph_toSVG(graph* g, char* filename, int screenwidth, int screenheight){
   FILE* svg = fopen(filename, "w");
   if(svg == NULL){
     printf("Failed to create file %s.\n",filename);
@@ -69,8 +69,8 @@ void graph_toSVG(graph* g, char* filename, int width, int height){
   stat = fprintf(svg, "\"http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd\">\n");
   stat = fprintf(svg, "<svg xmlns=\"http://www.w3.org/2000/svg\"\n");
   stat = fprintf(svg, "xmlns:xlink=\"http://www.w3.org/1999/xlink\" xml:space=\"preserve\"\n");
-  stat = fprintf(svg, "width=\"%dpx\" height=\"%dpx\"\n",width,height);
-  stat = fprintf(svg, "viewBox=\"0 0 %d %d\"\n", width,height);
+  stat = fprintf(svg, "width=\"%dpx\" height=\"%dpx\"\n",screenwidth,screenheight);
+  stat = fprintf(svg, "viewBox=\"0 0 %d %d\"\n", screenwidth,screenheight);
   stat = fprintf(svg, "zoomAndPan=\"disable\" >\n");
 
 
@@ -109,6 +109,8 @@ void graph_toSVG(graph* g, char* filename, int width, int height){
       return;
     }
   }
+
+  stat = fprintf(svg , "<rect x=\"0\" y=\"0\" width=\"%d\" height=\"%d\" stroke=\"rgb(0,1,0)\"/>\n",screenwidth, screenheight);
 
   fprintf(svg,"</svg>");
   fclose(svg);
