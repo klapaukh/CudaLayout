@@ -16,15 +16,18 @@ int main(int argc, char** argv){
     printf("Creating a graph failed. Terminating");
     return EXIT_FAILURE;
   }
+ 
+  int swidth = 100;
+  int sheight = 100;
   
-  graph_initRandom(g,20,10,100,100);
+  graph_initRandom(g,20,10,swidth,sheight);
   /*The graph is now is a legal state. 
     It is possible to lay it out now
   */
   
-  graph_layout(g,100,100,10000);
+  graph_layout(g,swidth,sheight,10000);
 
-  graph_toSVG(g, "test.svg");
+  graph_toSVG(g, "test.svg",swidth,sheight);
   graph_free(g);
   return EXIT_SUCCESS;
 
