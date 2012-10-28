@@ -17,12 +17,12 @@ int main(int argc, char** argv){
     return EXIT_FAILURE;
   }
   
-  graph_initRandom(g,80,80,1920,1080);
+  graph_initRandom(g,20,10,100,100);
   /*The graph is now is a legal state. 
     It is possible to lay it out now
   */
   
-  graph_layout(g,1920,1080,10000);
+  graph_layout(g,100,100,10000);
 
   graph_toSVG(g, "test.svg");
   graph_free(g);
