@@ -22,7 +22,7 @@ __global__ void layout(node* nodes, unsigned char* edges, int numNodes, int widt
       float dy = nodes[me].y - nodes[i].y;
       float dist = sqrtf(dx*dx + dy *dy);
       
-      float ke = 0.05;
+      float ke = 5;
       float q1 = 3, q2 = 3;
 
       if(dist < 5 || !isfinite(dist)){
@@ -40,14 +40,14 @@ __global__ void layout(node* nodes, unsigned char* edges, int numNodes, int widt
 	//float naturalDistance = nodes[i].width + nodes[me].height; //TODO different sizes
 	float naturalWidth = nodes[i].width;
 	float naturalHeight = nodes[i].height;
-	float f = 2;
+	float f = 50;
 	fx += (-f) * (dx - naturalWidth);
 	fy += (-f) * (dy - naturalHeight);      
       }
     }
     //Move
     //F=ma => a = F/m
-    float mass = 2000;
+    float mass = 1;
     float ax = fx / mass;
     float ay = fy / mass;
     if(ax > width/3){
