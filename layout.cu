@@ -28,7 +28,7 @@ __global__ void layout(node* nodes, unsigned char* edges, int numNodes, int widt
       if(dist < 5 || !isfinite(dist)){
 	dist = 5;
       }
-      float f = ke*q1*q2/ (dist*dist);
+      float f = ke*q1*q2/ (dist*dist * dist);
       //printf("%d", f);
       if(isfinite(f)){
 	fx += dx * f;
