@@ -24,8 +24,8 @@ int main(int argc, char** argv){
   /*Check arguments to make sure you got a file*/
   //There must be at least some arguments to get a file
 
-  float ke = 5;
-  float kh = 5;
+  float ke = 500;
+  float kh = 0.0005;
   char* filename = NULL;
   int swidth = 1920;
   int sheight = 1080;
@@ -34,7 +34,7 @@ int main(int argc, char** argv){
   
 
   if(argc < 2){
-    printf("Usage: layout [-f filename] [-gui] [-Ke 5] [-Kh 5] [-i 10000] [-width 1920] [-height 1080]\n");
+    printf("Usage: layout [-f filename] [-gui] [-Ke 500] [-Kh 0.0005] [-i 10000] [-width 1920] [-height 1080]\n");
     return EXIT_FAILURE;
   }
 
