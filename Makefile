@@ -3,7 +3,7 @@ TARGET=layout
 CC=g++
 NVCC=nvcc
 CFLAGS=-pedantic -Wall -Wextra -lint -I/opt/cuda50/include
-LDFLAGS=-Xlinker -rpath /opt/cuda50/lib64 -L/opt/cuda50/lib64 -lcudart -lexpat
+LDFLAGS=-Xlinker -rpath /opt/cuda50/lib64 -L/opt/cuda50/lib64 -lcudart -lexpat -lGL -lGLU -lglut
 NCFLAGS=-m64 -I/opt/cuda50/include
 
 all: $(TARGET)
