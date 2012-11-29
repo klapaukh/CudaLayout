@@ -173,8 +173,8 @@ graph* read(char* filename){
 	     data.edges[i].source, data.edges[i].target);
       return NULL;
     }
-    g->edges[sourceid+targetid*g->numNodes] = i;
-    g->edges[targetid+sourceid*g->numNodes] = i;
+    g->edges[sourceid+targetid*g->numNodes] = i+1;
+    g->edges[targetid+sourceid*g->numNodes] = i+1;
   }
 
   //Graph is now actually working
