@@ -17,18 +17,19 @@ __global__ void layout(node* nodes, unsigned char* edges, int numNodes, int widt
       if( i == me){
 	continue;
       }
-      //Work out the repulsive coulombs law force
+
+      //Distance between two nodes
       float dx = nodes[me].x - nodes[i].x;
       float dy = nodes[me].y - nodes[i].y;
       float dist = sqrtf(dx*dx + dy *dy);
-      
+
+      //Work out the repulsive coulombs law force      
       float q1 = 3, q2 = 3;
 
-      if(dist < 5 || !isfinite(dist)){
-	dist = 5;
+      if(dist < 1 || !isfinite(dist)){
+	dist = 1;
       }
       float f = ke*q1*q2/ (dist*dist * dist);
-      //printf("%d", f);
       if(isfinite(f)){
 	fx += dx * f;
 	fy += dy * f;
@@ -37,10 +38,10 @@ __global__ void layout(node* nodes, unsigned char* edges, int numNodes, int widt
       if(edges[i + me * numNodes]){
 	//Attractive spring force
 	//float naturalDistance = nodes[i].width + nodes[me].height; //TODO different sizes
-	float naturalWidth = nodes[i].width;
-	float naturalHeight = nodes[i].height;
-	fx += -kh * (dx - naturalWidth) * dx/dist;
-	fy += -kh * (dy - naturalHeight) *dy/dist;      
+	float naturalWidth = nodes[i].width + nodes[me].width;
+	float naturalHeight = nodes[i].height + nodes[me].height;
+	fx += -kh * (abs(dx) - naturalWidth) * dx/dist;
+	fy += -kh * (abs(dy) - naturalHeight)* dy/dist;      
       }
     }
     //Move
