@@ -10,7 +10,8 @@ height of plane
 number of interations
 ke
 kh
+time
  */
-void graph_layout(graph*, int, int, int, float, float);
+void graph_layout(graph*, int, int, int, float, float, float);
 
 #endif
