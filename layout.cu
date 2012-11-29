@@ -3,7 +3,7 @@
 
 #include "layout.h"
 
-__global__ void layout(node* nodes, unsigned char* edges, int numNodes, int width, int height, int iterations){
+__global__ void layout(node* nodes, unsigned char* edges, int numNodes, int width, int height, int iterations, float ke, float kh){
   int me = blockIdx.x * 8 + threadIdx.x;
   
   if(me >= numNodes){
@@ -22,7 +22,6 @@ __global__ void layout(node* nodes, unsigned char* edges, int numNodes, int widt
       float dy = nodes[me].y - nodes[i].y;
       float dist = sqrtf(dx*dx + dy *dy);
       
-      float ke = 5;
       float q1 = 3, q2 = 3;
 
       if(dist < 5 || !isfinite(dist)){
@@ -40,9 +39,8 @@ __global__ void layout(node* nodes, unsigned char* edges, int numNodes, int widt
 	//float naturalDistance = nodes[i].width + nodes[me].height; //TODO different sizes
 	float naturalWidth = nodes[i].width;
 	float naturalHeight = nodes[i].height;
-	float f = 50;
-	fx += (-f) * (dx - naturalWidth);
-	fy += (-f) * (dy - naturalHeight);      
+	fx += -kh * (dx - naturalWidth) * dx/dist;
+	fy += -kh * (dy - naturalHeight) *dy/dist;      
       }
     }
     //Move
@@ -111,7 +109,7 @@ __global__ void layout(node* nodes, unsigned char* edges, int numNodes, int widt
 }
 
 
-void graph_layout(graph* g, int width, int height, int iterations){
+void graph_layout(graph* g, int width, int height, int iterations, float ke, float kh){
   /*
     need to allocate memory for nodes and edges on the device
   */
@@ -147,7 +145,7 @@ void graph_layout(graph* g, int width, int height, int iterations){
   int nth = 8;
   int nbl = ceil(g->numNodes / 8.0);
   printf("Graph has %d nodes with %d blocks and %d threads\n", g->numNodes, nbl, nth);
-  layout<<<nbl,nth>>>(nodes_device, edges_device, g->numNodes,width,height, iterations);
+  layout<<<nbl,nth>>>(nodes_device, edges_device, g->numNodes,width,height, iterations,ke, kh);
   
   /*After computation you must copy the results back*/
   err = cudaMemcpy(g->nodes, nodes_device, sizeof(node)* g->numNodes, cudaMemcpyDeviceToHost);

@@ -56,7 +56,7 @@ void graph_initRandom(graph* g,int width, int height, int screenWidth, int scree
   }
 }
 
-void graph_toSVG(graph* g, char* filename, int screenwidth, int screenheight){
+void graph_toSVG(graph* g, const char* filename, int screenwidth, int screenheight){
   FILE* svg = fopen(filename, "w");
   if(svg == NULL){
     printf("Failed to create file %s.\n",filename);
