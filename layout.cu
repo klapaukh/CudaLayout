@@ -144,7 +144,7 @@ void graph_layout(graph* g, int width, int height, int iterations, float ke, flo
   /*COMPUTE*/
   int nth = 8;
   int nbl = ceil(g->numNodes / 8.0);
-  printf("Graph has %d nodes with %d blocks and %d threads\n", g->numNodes, nbl, nth);
+  //printf("Graph has %d nodes with %d blocks and %d threads\n", g->numNodes, nbl, nth);
   layout<<<nbl,nth>>>(nodes_device, edges_device, g->numNodes,width,height, iterations,ke, kh);
   
   /*After computation you must copy the results back*/
