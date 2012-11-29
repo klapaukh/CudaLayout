@@ -34,8 +34,7 @@ void startTag(void* data, const char* element, const char** attributes){
 
   //only actually care about 2 different kinds of object
   if(strcmp(element, "node")==0){
-    int i=0;
-    for(i=0; attributes[i] != NULL; i+=2){
+    for(int i=0; attributes[i] != NULL; i+=2){
       if(strcmp(attributes[i],"id") == 0){
 	if(graph->numNode >= MAX_LEN){
 	  printf("Too many nodes in file. Greater than MAX_LEN (%d)\n", MAX_LEN);
@@ -47,22 +46,21 @@ void startTag(void* data, const char* element, const char** attributes){
       }
     }
   }else if(strcmp(element, "edge") == 0){
-    int i=0;
     if(graph->numEdge >= MAX_LEN){
       printf("Too many edges in file. Greater than MAX_LEN (%d)\n", MAX_LEN);
       return;
     }
-    for(i=0; attributes[i] != NULL; i+=2){
+    for(int i=0; attributes[i] != NULL; i+=2){
       if(strcmp(attributes[i],"id") == 0){
-	//printf("Edge: %s\n", attributes[i+1]);
+	//printf("%d: %s: %s\n", i, attributes[i], attributes[i+1]);
 	strncpy(graph->edges[graph->numEdge].id, attributes[i+1], ID_LEN);
       }
-      if(strcmp(attributes[i], "source")){
-	//printf("Source: %s\n", attributes[i+1]);
+      if(strcmp(attributes[i], "source")==0){
+	//printf("%d: Source: %s\n", i, attributes[i+1]);
 	strncpy(graph->edges[graph->numEdge].source, attributes[i+1], ID_LEN);
       }
-      if(strcmp(attributes[i], "target")){
-	//printf("Target: %s\n", attributes[i+1]);
+      if(strcmp(attributes[i], "target")==0){
+	//printf("%d: Target: %s\n", i, attributes[i+1]);
 	strncpy(graph->edges[graph->numEdge].target, attributes[i+1], ID_LEN);
       }
     }
