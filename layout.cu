@@ -63,11 +63,20 @@ __global__ void layout(node* nodes, unsigned char* edges, int numNodes, int widt
       }
     }else{
       float fFric = Muk * mass * g;
-      float fricx = fFric* normx;
       fx += -copysign(fFric*normx, nodes[me].dx);
       fy += -copysign(fFric*normy, nodes[me].dy);
     }
-
+    
+    //Drag
+    if(speed != 0){
+      float crossSec = nodes[me].width / 1000.0f;
+      float fDrag = 0.25f * crossSec * speed * speed;
+      float fdx = -copysign(fDrag * normx, nodes[me].dx);
+      float fdy = -copysign(fDrag * normy, nodes[me].dy);
+      
+      fx += fdx;
+      fy += fdy;
+    }
 
     //Move
     //F=ma => a = F/m
