@@ -3,7 +3,7 @@
 
 #include "layout.h"
 
-__global__ void layout(node* nodes, unsigned char* edges, int numNodes, int width, int height, int iterations, float ke, float kh, float time){
+__global__ void layout(node* nodes, unsigned char* edges, int numNodes, int width, int height, int iterations, float ke, float kh, float mass, float time){
   int me = blockIdx.x * 8 + threadIdx.x;
   
   if(me >= numNodes){
@@ -43,11 +43,38 @@ __global__ void layout(node* nodes, unsigned char* edges, int numNodes, int widt
 	fy += -kh * (abs(dy) - naturalHeight)* dy/dist;      
       }
     }
+
+    //Friction against ground
+    float g = 9.8f;
+    float Muk = 0.04; //Kinetic Friction Coefficient
+    float Mus = 0.2; //Static Friction Coefficient
+    float speed = nodes[me].dx * nodes[me].dx + nodes[me].dy * nodes[me].dy;
+    speed = sqrt(speed);
+    float normx = nodes[me].dx / speed;
+    float normy = nodes[me].dy / speed;
+    
+    if(nodes[me].dx == 0 && nodes[me].dy ==0 ){
+      //I am stationary
+      float fFric = Mus * mass * g;
+      if(abs(fFric* normx) >= abs(fx)  && abs(fFric*normx) >= abs(fy)){
+	fx = fy = 0;
+      }else{
+	//Just ignore friction this tick -- only really happens once
+      }
+    }else{
+      float fFric = Muk * mass * g;
+      float fricx = fFric* normx;
+      fx += -copysign(fFric*normx, nodes[me].dx);
+      fy += -copysign(fFric*normy, nodes[me].dy);
+    }
+
+
     //Move
     //F=ma => a = F/m
-    float mass = 1;
-    float ax = time * fx / mass;
-    float ay = time * fy / mass;
+    float ax = fx / mass;
+    float ay = fy / mass;
+
+
     if(ax > width/3){
       ax = width/3;
     }else if(ax < -width/3){
@@ -64,13 +91,10 @@ __global__ void layout(node* nodes, unsigned char* edges, int numNodes, int widt
       ay = 0;
     }
     
-    float Muk = 0.04; //Kinetic Friction Coefficient
-    float frictionForce = Muk * mass * 9.8;
-    
     nodes[me].nextX = nodes[me].x + nodes[me].dx*time;
     nodes[me].nextY = nodes[me].y + nodes[me].dy*time;
-    nodes[me].nextdy =nodes[me].dy*dampening + ay;
-    nodes[me].nextdx =nodes[me].dx*dampening + ax;
+    nodes[me].nextdy =nodes[me].dy + ay*time;
+    nodes[me].nextdx =nodes[me].dx + ax*time;
     
     //Make sure it won't be travelling too fast
     if(nodes[me].nextdx * time > width/2){
@@ -112,7 +136,7 @@ __global__ void layout(node* nodes, unsigned char* edges, int numNodes, int widt
 }
 
 
-void graph_layout(graph* g, int width, int height, int iterations, float ke, float kh, float time){
+  void graph_layout(graph* g, int width, int height, int iterations, float ke, float kh, float mass, float time){
   /*
     need to allocate memory for nodes and edges on the device
   */
@@ -148,7 +172,7 @@ void graph_layout(graph* g, int width, int height, int iterations, float ke, flo
   int nth = 8;
   int nbl = ceil(g->numNodes / 8.0);
   //printf("Graph has %d nodes with %d blocks and %d threads\n", g->numNodes, nbl, nth);
-  layout<<<nbl,nth>>>(nodes_device, edges_device, g->numNodes,width,height, iterations,ke, kh, time);
+  layout<<<nbl,nth>>>(nodes_device, edges_device, g->numNodes,width,height, iterations,ke, kh, mass, time);
   
   /*After computation you must copy the results back*/
   err = cudaMemcpy(g->nodes, nodes_device, sizeof(node)* g->numNodes, cudaMemcpyDeviceToHost);
