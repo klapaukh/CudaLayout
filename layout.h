@@ -13,6 +13,13 @@ kh
 mass
 time
  */
-void graph_layout(graph*, int, int, int, float, float, float, float);
+void graph_layout(graph* g, int width, int height, int iterations, float ke, float kh, float mass, float time, float coefficientOfResititution);
+
+//Force Modes 
+#define COULOMBS_LAW 1
+#define HOOKES_LAW_SPRING 1 << 1
+#define LOG_SPRING 1 << 2
+#define FRICTION 1 << 3
+#define DRAG 1 << 4
 
 #endif

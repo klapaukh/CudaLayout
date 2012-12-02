@@ -18,7 +18,7 @@ void initCamera(int,int);
 
 graph* glGraph = NULL;
 int glWidth, glHeight, glIter;
-float glKe, glKh, glMass, glTime;
+float glKe, glKh, glMass, glTime, glCoefRest;
 
 int main(int argc, char** argv){
   /*Check arguments to make sure you got a file*/
@@ -33,10 +33,11 @@ int main(int argc, char** argv){
   bool gui = false;
   float mass = 1;
   float time = 1;
+  float coefficientOfRestitution = -0.9;
   
 
   if(argc < 2){
-    printf("Usage: layout [-f filename] [-gui] [-Ke 500] [-Kh 0.0005] [-i 10000] [-width 1920] [-height 1080] [-t 1] [-m 1]\n");
+    printf("Usage: layout [-f filename] [-gui] [-Ke 500] [-Kh 0.0005] [-i 10000] [-width 1920] [-height 1080] [-t 1] [-m 1] [-cRest -0.9]\n");
     return EXIT_FAILURE;
   }
 
@@ -59,7 +60,8 @@ int main(int argc, char** argv){
       time= atof(argv[++i]);
     }else if(strcmp(argv[i], "-m")==0){
       mass= atof(argv[++i]);
-
+    }else if(strcmp(argv[i], "-cRest")==0){
+      coefficientOfRestitution = atof(argv[++i]);
     }else{
       fprintf(stderr,"Unknown option %s\n",argv[i]);
       return EXIT_FAILURE;
@@ -98,7 +100,7 @@ int main(int argc, char** argv){
     glIter = iterations;
     glMass = mass;
     glTime = time;
-
+    glCoefRest = coefficientOfRestitution;
     glutMainLoop();
 
   }
@@ -110,7 +112,7 @@ int main(int argc, char** argv){
   */
   graph_toSVG(g, "before.svg", swidth, sheight);
   
-  graph_layout(g,swidth,sheight,iterations, ke, kh, mass, time);
+  graph_layout(g,swidth,sheight,iterations, ke, kh, mass, time, coefficientOfRestitution);
 
   graph_toSVG(g, "after.svg",swidth,sheight);
   graph_free(g);
@@ -177,7 +179,7 @@ void display(){
 }
 
 void idle(){
-  graph_layout(glGraph,glWidth,glHeight,glIter, glKe, glKh, glMass, glTime);
+  graph_layout(glGraph,glWidth,glHeight,glIter, glKe, glKh, glMass, glTime, glCoefRest);
   glutPostRedisplay();
 }
 

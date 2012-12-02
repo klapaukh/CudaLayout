@@ -3,7 +3,7 @@
 
 #include "layout.h"
 
-__global__ void layout(node* nodes, unsigned char* edges, int numNodes, int width, int height, int iterations, float ke, float kh, float mass, float time){
+__global__ void layout(node* nodes, unsigned char* edges, int numNodes, int width, int height, int iterations, float ke, float kh, float mass, float time, float coefficientOfRestitution){
   int me = blockIdx.x * 8 + threadIdx.x;
   
   if(me >= numNodes){
@@ -119,7 +119,7 @@ __global__ void layout(node* nodes, unsigned char* edges, int numNodes, int widt
     }
     
     //But wait - There are bounds to check!
-    float collided = -0.9; //coeeficient of restitution
+    float collided = coefficientOfRestitution; //coeeficient of restitution
     if(nodes[me].nextX + nodes[me].width/2 > width){
       nodes[me].nextX = 2* width - nodes[me].nextX - nodes[me].width;
       nodes[me].nextdx *= collided;
@@ -145,7 +145,7 @@ __global__ void layout(node* nodes, unsigned char* edges, int numNodes, int widt
 }
 
 
-  void graph_layout(graph* g, int width, int height, int iterations, float ke, float kh, float mass, float time){
+void graph_layout(graph* g, int width, int height, int iterations, float ke, float kh, float mass, float time, float coefficientOfRestitution){
   /*
     need to allocate memory for nodes and edges on the device
   */
@@ -181,7 +181,7 @@ __global__ void layout(node* nodes, unsigned char* edges, int numNodes, int widt
   int nth = 8;
   int nbl = ceil(g->numNodes / 8.0);
   //printf("Graph has %d nodes with %d blocks and %d threads\n", g->numNodes, nbl, nth);
-  layout<<<nbl,nth>>>(nodes_device, edges_device, g->numNodes,width,height, iterations,ke, kh, mass, time);
+  layout<<<nbl,nth>>>(nodes_device, edges_device, g->numNodes,width,height, iterations,ke, kh, mass, time, coefficientOfRestitution);
   
   /*After computation you must copy the results back*/
   err = cudaMemcpy(g->nodes, nodes_device, sizeof(node)* g->numNodes, cudaMemcpyDeviceToHost);
