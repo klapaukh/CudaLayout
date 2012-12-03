@@ -24,7 +24,7 @@ __global__ void layout(node* nodes, unsigned char* edges, int numNodes, int widt
 
       //Work out the repulsive coulombs law force      
       if((forcemode & COULOMBS_LAW) != 0){
-	float q1 = 3, q2 = 3;
+	float q1 = nodes[me].charge, q2 = nodes[i].charge;
 	
 	if(dist < 1 || !isfinite(dist)){
 	  dist = 1;

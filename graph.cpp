@@ -44,7 +44,7 @@ void graph_free(graph* g){
   free(g);
 }
 
-void graph_initRandom(graph* g,int width, int height, int screenWidth, int screenHeight){
+void graph_initRandom(graph* g,int width, int height, int screenWidth, int screenHeight, float nodeCharge){
   srand48(time(NULL));
   int i;
   for(i = 0; i < g->numNodes; i++){
@@ -54,6 +54,7 @@ void graph_initRandom(graph* g,int width, int height, int screenWidth, int scree
     g->nodes[i].y = drand48() * (screenHeight-height) + height/2;
     g->nodes[i].dx = 0;
     g->nodes[i].dy = 0;
+    g->nodes[i].charge = nodeCharge;
   }
 }
 

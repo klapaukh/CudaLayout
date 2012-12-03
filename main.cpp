@@ -25,7 +25,7 @@ float glKe, glKh, glMass, glTime, glCoefRest;
 
 
 void usage(){
-  fprintf(stderr, "Usage: layout [-f filename] [-gui] [-Ke 500] [-Kh 0.0005] [-i 10000] [-width 1920] [-height 1080] [-t 1] [-m 1] [-cRest -0.9] [-friction 3] [-spring 1] [-walls 1] [-forces 1]\n");
+  fprintf(stderr, "Usage: layout [-f filename] [-gui] [-Ke 500] [-Kh 0.0005] [-Kn 3] [-i 10000] [-width 1920] [-height 1080] [-t 1] [-m 1] [-cRest -0.9] [-friction 3] [-spring 1] [-walls 1] [-forces 1]\n");
   fprintf(stderr, "Forces:\n");
 
   fprintf(stderr, "\nFriction:\n");
@@ -143,6 +143,7 @@ int main(int argc, char** argv){
   float mass = 1;
   float time = 1;
   float coefficientOfRestitution = -0.9;
+  float nodeCharge = 3;
   int forcemode = COULOMBS_LAW | HOOKES_LAW_SPRING | FRICTION | DRAG | BOUNCY_WALLS;
   
 
@@ -158,6 +159,8 @@ int main(int argc, char** argv){
       ke = readFloat(argc, argv, ++i);
     }else if(strcmp(argv[i], "-Kh")==0){
       kh = readFloat(argc,argv, ++i);
+    }else if(strcmp(argv[i], "-Kn")==0){
+      nodeCharge = readFloat(argc,argv, ++i);
     }else if(strcmp(argv[i], "-i")==0){
       iterations = readInt(argc,argv, ++i);
     }else if(strcmp(argv[i], "-width")==0){
@@ -209,7 +212,7 @@ int main(int argc, char** argv){
     return EXIT_FAILURE;
   }
  
-  graph_initRandom(g,20,10,swidth,sheight);
+  graph_initRandom(g,20,10,swidth,sheight, nodeCharge);
 
   if(gui){
     glutInit(&argc, argv);

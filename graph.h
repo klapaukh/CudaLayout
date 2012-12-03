@@ -12,6 +12,7 @@ typedef struct node{
   float nextdy;
   float width;
   float height;
+  float charge;
   int   label;
 } node;
 
@@ -33,7 +34,7 @@ typedef struct graph{
 graph* graph_create(void);
 void graph_free(graph*);
 void graph_toSVG(graph*, const char*, int, int, bool);
-void graph_initRandom(graph*, int, int, int, int);
+void graph_initRandom(graph*, int, int, int, int, float);
 
 
 #endif
