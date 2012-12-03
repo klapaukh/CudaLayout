@@ -25,7 +25,7 @@ float glKe, glKh, glMass, glTime, glCoefRest;
 
 
 void usage(){
-  fprintf(stderr, "Usage: layout [-f filename] [-gui] [-Ke 500] [-Kh 0.0005] [-i 10000] [-width 1920] [-height 1080] [-t 1] [-m 1] [-cRest -0.9] [-friction 3] [-spring 1] [-forces 1]\n");
+  fprintf(stderr, "Usage: layout [-f filename] [-gui] [-Ke 500] [-Kh 0.0005] [-i 10000] [-width 1920] [-height 1080] [-t 1] [-m 1] [-cRest -0.9] [-friction 3] [-spring 1] [-walls 1] [-forces 1]\n");
   fprintf(stderr, "Forces:\n");
 
   fprintf(stderr, "\nFriction:\n");
@@ -36,12 +36,16 @@ void usage(){
   fprintf(stderr, " Hooke's Law         - 1\n");
   fprintf(stderr, " Log Law             - 2\n");
 
+  fprintf(stderr, "\nWalls:\n");
+  fprintf(stderr, " Bouncy Walls        - 1\n");
+  fprintf(stderr, " Charged Walls       - 2\n");
+  
+
   fprintf(stderr, "\nPrimary:\n");
   fprintf(stderr, " Coulombs Law        - 1\n"); 
-  fprintf(stderr, " Charged Walls       - 2\n"); 
-  fprintf(stderr, " Degree-Based Charge - 4\n"); 
-  fprintf(stderr, " Charged Edges       - 8\n"); 
-  fprintf(stderr, " Wrap Around Forces  - 16\n"); 
+  fprintf(stderr, " Degree-Based Charge - 2\n"); 
+  fprintf(stderr, " Charged Edges       - 4\n"); 
+  fprintf(stderr, " Wrap Around Forces  - 8\n"); 
 
 }
 
@@ -139,7 +143,7 @@ int main(int argc, char** argv){
   float mass = 1;
   float time = 1;
   float coefficientOfRestitution = -0.9;
-  int forcemode = COULOMBS_LAW | HOOKES_LAW_SPRING | FRICTION | DRAG;
+  int forcemode = COULOMBS_LAW | HOOKES_LAW_SPRING | FRICTION | DRAG | BOUNCY_WALLS;
   
 
   if(argc < 2){
@@ -170,22 +174,27 @@ int main(int argc, char** argv){
       coefficientOfRestitution = readFloat(argc,argv, ++i);
     }else if(strcmp(argv[i], "-friction")==0){
       int fricForce = readInt(argc,argv, ++i);
-      forcemode = forcemode ^ (FRICTION | DRAG);
+      forcemode = forcemode & ~(FRICTION | DRAG);
       forcemode = forcemode | (fricForce << 2);
     }else if(strcmp(argv[i], "-spring")==0){
       int springForce = readInt(argc,argv, ++i);  
-      forcemode = forcemode ^ (HOOKES_LAW_SPRING | LOG_SPRING);
+      forcemode = forcemode & ~(HOOKES_LAW_SPRING | LOG_SPRING);
       forcemode = forcemode | (springForce);
+    }else if(strcmp(argv[i], "-walls")==0){
+      int wallForce = readInt(argc,argv, ++i);
+      forcemode = forcemode & ~(BOUNCY_WALLS | CHARGED_WALLS);
+      forcemode = forcemode | (wallForce);
     }else if(strcmp(argv[i], "-forces")==0){
       int primForce = readInt(argc,argv, ++i);  
-      forcemode = forcemode ^ (COULOMBS_LAW);
-      forcemode = forcemode | (primForce << 4);
+      forcemode = forcemode & ~(COULOMBS_LAW | DEGREE_BASED_CHARGE | CHARGED_EDGE_CENTERS | WRAP_AROUND_FORCES);
+      forcemode = forcemode | (primForce << 6);
       
     }else{
       fprintf(stderr,"Unknown option %s\n",argv[i]);
       return EXIT_FAILURE;
     }
   }
+  
 
   if(filename == NULL){
     fprintf(stderr, "You must include a filename\n");
@@ -251,6 +260,32 @@ void display(){
   glEnable(GL_COLOR_MATERIAL);
 
   glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE);
+
+
+  if((glForcemode & (CHARGED_WALLS | BOUNCY_WALLS)) == 0){
+    //I actually need to normalise all the values for drawing
+    float minx= FLT_MAX, maxx= FLT_MIN, miny = FLT_MAX, maxy= FLT_MIN;
+    for(int i=0 ;i < glGraph ->numNodes;i++){
+      node* n = glGraph->nodes+i;
+      if(n->x - n->width/2 < minx){
+	minx = n->x - n->width/2;
+      }
+      if(n->x + n->width/2 > maxx){
+	maxx = n->x + n->width/2;
+      }
+      if(n->y - n->height/2 < miny){
+	miny = n->y - n->height/2;
+      }
+      if(n->y + n->height/2 > maxy){
+	maxy = n->y + n->height/2;
+      }
+    }
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    gluOrtho2D(minx,maxx, maxy, miny);
+    glMatrixMode(GL_MODELVIEW);
+
+  }
 
   //draw edges
   glBegin(GL_LINES);

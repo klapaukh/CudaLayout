@@ -87,20 +87,22 @@ __global__ void layout(node* nodes, unsigned char* edges, int numNodes, int widt
     float ay = fy / mass;
 
 
-    if(ax > width/3){
-      ax = width/3;
-    }else if(ax < -width/3){
-      ax = -width/3;
-    }else if(!isfinite(ax)){
-      ax = 0;
-    }
-    
-    if(ay > height/3){
-      ay = height/3;
-    }else if(ay < -height/3){
-      ay = -height/3;
-    }else if(!isfinite(ay)){
-      ay = 0;
+    if((forcemode & (CHARGED_WALLS | BOUNCY_WALLS)) != 0){
+      if(ax > width/3){
+	ax = width/3;
+      }else if(ax < -width/3){
+	ax = -width/3;
+      }else if(!isfinite(ax)){
+	ax = 0;
+      }
+      
+      if(ay > height/3){
+	ay = height/3;
+      }else if(ay < -height/3){
+	ay = -height/3;
+      }else if(!isfinite(ay)){
+	ay = 0;
+      }
     }
     
     nodes[me].nextX = nodes[me].x + nodes[me].dx*time;
@@ -108,37 +110,40 @@ __global__ void layout(node* nodes, unsigned char* edges, int numNodes, int widt
     nodes[me].nextdy =nodes[me].dy + ay*time;
     nodes[me].nextdx =nodes[me].dx + ax*time;
     
-    //Make sure it won't be travelling too fast
-    if(nodes[me].nextdx * time > width/2){
-      nodes[me].nextdx = width/(2*time);
-    }else if(nodes[me].nextdx * time < -width/2){
-      nodes[me].nextdx = -width/(2*time);
-    }
-    
-    if(nodes[me].nextdy * time > height / 2){
-      nodes[me].nextdy = height/(2*time);
-    }else if(nodes[me].nextdy * time < -height/2){
-      nodes[me].nextdy = -height/(2*time);
-    }
-    
-    //But wait - There are bounds to check!
-    float collided = coefficientOfRestitution; //coeeficient of restitution
-    if(nodes[me].nextX + nodes[me].width/2 > width){
-      nodes[me].nextX = 2* width - nodes[me].nextX - nodes[me].width;
-      nodes[me].nextdx *= collided;
-    }else if(nodes[me].nextX < nodes[me].width/2){
-      nodes[me].nextX =  nodes[me].width - nodes[me].nextX;
-      nodes[me].nextdx *= collided;
-    }
-    
-    if(nodes[me].nextY + nodes[me].height/2 > height){
+
+    if((forcemode & (CHARGED_WALLS | BOUNCY_WALLS)) != 0){
+      //Make sure it won't be travelling too fast
+      if(nodes[me].nextdx * time > width/2){
+	nodes[me].nextdx = width/(2*time);
+      }else if(nodes[me].nextdx * time < -width/2){
+	nodes[me].nextdx = -width/(2*time);
+      }
+      
+      if(nodes[me].nextdy * time > height / 2){
+	nodes[me].nextdy = height/(2*time);
+      }else if(nodes[me].nextdy * time < -height/2){
+	nodes[me].nextdy = -height/(2*time);
+      }
+      
+      //But wait - There are bounds to check!
+      float collided = coefficientOfRestitution; //coeeficient of restitution
+      if(nodes[me].nextX + nodes[me].width/2 > width){
+	nodes[me].nextX = 2* width - nodes[me].nextX - nodes[me].width;
+	nodes[me].nextdx *= collided;
+      }else if(nodes[me].nextX < nodes[me].width/2){
+	nodes[me].nextX =  nodes[me].width - nodes[me].nextX;
+	nodes[me].nextdx *= collided;
+      }
+      
+      if(nodes[me].nextY + nodes[me].height/2 > height){
 	nodes[me].nextY = 2*height - nodes[me].nextY - nodes[me].height;
 	nodes[me].nextdy *= collided;
-    }else if(nodes[me].nextY < nodes[me].height/2){
-      nodes[me].nextY = nodes[me].height - nodes[me].nextY; 
-      nodes[me].nextdy *= collided;
+      }else if(nodes[me].nextY < nodes[me].height/2){
+	nodes[me].nextY = nodes[me].height - nodes[me].nextY; 
+	nodes[me].nextdy *= collided;
+      }
     }
-    
+
     //Update
     nodes[me].x = nodes[me].nextX;
     nodes[me].y = nodes[me].nextY;
