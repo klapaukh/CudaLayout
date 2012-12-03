@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <time.h>
+#include <float.h>
 
 #include "graph.h"
 
@@ -56,7 +57,7 @@ void graph_initRandom(graph* g,int width, int height, int screenWidth, int scree
   }
 }
 
-void graph_toSVG(graph* g, const char* filename, int screenwidth, int screenheight){
+void graph_toSVG(graph* g, const char* filename, int screenwidth, int screenheight, bool hasWalls){
   FILE* svg = fopen(filename, "w");
   if(svg == NULL){
     printf("Failed to create file %s.\n",filename);
@@ -70,8 +71,28 @@ void graph_toSVG(graph* g, const char* filename, int screenwidth, int screenheig
   stat = fprintf(svg, "<svg xmlns=\"http://www.w3.org/2000/svg\"\n");
   stat = fprintf(svg, "xmlns:xlink=\"http://www.w3.org/1999/xlink\" xml:space=\"preserve\"\n");
   stat = fprintf(svg, "width=\"%dpx\" height=\"%dpx\"\n",screenwidth,screenheight);
-  stat = fprintf(svg, "viewBox=\"0 0 %d %d\"\n", 
-  screenwidth,screenheight);
+  if(hasWalls){
+    stat = fprintf(svg, "viewBox=\"0 0 %d %d\"\n", screenwidth,screenheight);
+  }else{
+    float minx= FLT_MAX, maxx= FLT_MIN, miny = FLT_MAX, maxy= FLT_MIN;
+    for(int i=0 ;i < g ->numNodes;i++){
+      node* n = g->nodes+i;
+      if(n->x - n->width/2 < minx){
+        minx = n->x - n->width/2;
+      }
+      if(n->x + n->width/2 > maxx){
+        maxx = n->x + n->width/2;
+      }
+      if(n->y - n->height/2 < miny){
+        miny = n->y - n->height/2;
+      }
+      if(n->y + n->height/2 > maxy){
+        maxy = n->y + n->height/2;
+      }
+    }
+
+    stat = fprintf(svg, "viewBox=\"%ld %ld %ld %ld\"\n", (long)minx, (long)miny, (long)(maxx-minx), (long)(maxy-miny));
+  }
   stat = fprintf(svg, "zoomAndPan=\"disable\" >\n");
 
 

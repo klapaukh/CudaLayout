@@ -242,11 +242,11 @@ int main(int argc, char** argv){
   /*The graph is now is a legal state. 
     It is possible to lay it out now
   */
-  graph_toSVG(g, "before.svg", swidth, sheight);
+  graph_toSVG(g, "before.svg", swidth, sheight, (forcemode & (BOUNCY_WALLS | CHARGED_WALLS)) != 0);
   
   graph_layout(g,swidth,sheight,iterations, ke, kh, mass, time, coefficientOfRestitution, forcemode);
 
-  graph_toSVG(g, "after.svg",swidth,sheight);
+  graph_toSVG(g, "after.svg",swidth,sheight, (forcemode & (BOUNCY_WALLS | CHARGED_WALLS)) != 0);
   graph_free(g);
   return EXIT_SUCCESS;
 
