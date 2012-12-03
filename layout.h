@@ -12,8 +12,9 @@ ke
 kh
 mass
 time
+forceMode
  */
-void graph_layout(graph* g, int width, int height, int iterations, float ke, float kh, float mass, float time, float coefficientOfResititution);
+void graph_layout(graph* g, int width, int height, int iterations, float ke, float kh, float mass, float time, float coefficientOfResititution, int forcemode);
 
 //Force Modes 
 #define COULOMBS_LAW 1

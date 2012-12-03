@@ -73,7 +73,7 @@ void endTag(void* data, const char* element){
   (void)element;
 }
 
-graph* read(char* filename){
+graph* read(const char* filename){
   //We have a file to read, now lets try to read it
   XML_Parser p = XML_ParserCreate(NULL); //We do no specify the encoding
   if(p == NULL){

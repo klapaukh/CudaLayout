@@ -1,6 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <limits.h>
+#include <float.h>
+#include <errno.h>
 
 #include <GL/glut.h>
 
@@ -17,8 +20,106 @@ void setLight();
 void initCamera(int,int);
 
 graph* glGraph = NULL;
-int glWidth, glHeight, glIter;
+int glWidth, glHeight, glIter, glForcemode;
 float glKe, glKh, glMass, glTime, glCoefRest;
+
+
+void usage(){
+  fprintf(stderr, "Usage: layout [-f filename] [-gui] [-Ke 500] [-Kh 0.0005] [-i 10000] [-width 1920] [-height 1080] [-t 1] [-m 1] [-cRest -0.9] [-friction 3] [-spring 1] [-forces 1]\n");
+  fprintf(stderr, "Forces:\n");
+
+  fprintf(stderr, "\nFriction:\n");
+  fprintf(stderr, " Friction     - 1\n");
+  fprintf(stderr, " Drag         - 2\n");
+
+  fprintf(stderr, "\nSpring:\n");
+  fprintf(stderr, " Hooke's Law  - 1\n");
+  fprintf(stderr, " Log Law      - 2\n");
+
+  fprintf(stderr, "\nPrimary:\n");
+  fprintf(stderr, " Coulombs Law - 1\n"); 
+
+}
+
+int readInt(int argc, char** argv, int i){
+  if(i >= argc){
+    fprintf(stderr, "An int was not provided to %s\n", argv[i-1]);
+    exit(EXIT_FAILURE);
+  }
+    
+  if(errno != 0){
+    perror("Something went wrong before readInt started");
+  }
+  errno = 0;
+  char* strend;
+  long val = strtol(argv[i], &strend, 10);
+
+  /* Check for various possible errors */
+  if ((errno == ERANGE && (val == LONG_MAX || val == LONG_MIN)) || (errno != 0 && val == 0)) {
+    fprintf(stderr, "An error occured while parsing the argument to %s\n", argv[i-1]);
+    perror("readInt");
+    exit(EXIT_FAILURE);
+  }
+
+  if (strend == argv[i]) {
+    fprintf(stderr, "No digits were found for argument %s\n", argv[i-1]);
+    exit(EXIT_FAILURE);
+  }
+
+  if(val > INT_MAX || val < INT_MIN){
+    fprintf(stderr, "Value given to argument %s outside of integer range", argv[i-1]);
+    exit(EXIT_FAILURE);
+  }
+
+  /* If we got here, strtol() successfully parsed a number */
+  if (*strend != '\0'){        /* Not necessarily an error... */
+    fprintf(stderr, "Further characters after number: %s in argument for %s\n", strend, argv[i-1]);
+  }
+
+  return (int)val;
+}
+
+float readFloat(int argc, char** argv, int i){
+  if(i >= argc){
+    fprintf(stderr, "A float was not provided to %s\n", argv[i-1]);
+    exit(EXIT_FAILURE);
+  }
+
+  if(errno != 0){
+    perror("Something went wrong before readFloat started");
+  }
+  errno = 0;
+  char* strend;
+  float val = strtof(argv[i], &strend);
+
+  /* Check for various possible errors */
+  if ((errno == ERANGE && (val == FLT_MAX || val == FLT_MIN)) || (errno != 0 && val == 0)) {
+    fprintf(stderr, "An error occured while parsing the argument to %s\n", argv[i-1]);
+    perror("readFloat");
+    exit(EXIT_FAILURE);
+  }
+
+  if (strend == argv[i]) {
+    fprintf(stderr, "No digits were found for argument %s\n", argv[i-1]);
+    exit(EXIT_FAILURE);
+  }
+
+  /* If we got here, strtol() successfully parsed a number */
+  if (*strend != '\0'){        /* Not necessarily an error... */
+    fprintf(stderr, "Further characters after number: %s in argument for %s\n", strend, argv[i-1]);
+  }
+
+  return val;
+}
+
+const char* readString(int argc, char** argv, int i){
+  if(i >= argc){
+    fprintf(stderr, "A String was not provided to %s\n", argv[i-1]);
+    exit(EXIT_FAILURE);
+  }
+
+  return argv[i];
+}
 
 int main(int argc, char** argv){
   /*Check arguments to make sure you got a file*/
@@ -26,7 +127,7 @@ int main(int argc, char** argv){
 
   float ke = 500;
   float kh = 0.0005;
-  char* filename = NULL;
+  const char* filename = NULL;
   int swidth = 1920;
   int sheight = 1080;
   int iterations = 10000;
@@ -34,34 +135,48 @@ int main(int argc, char** argv){
   float mass = 1;
   float time = 1;
   float coefficientOfRestitution = -0.9;
+  int forcemode = COULOMBS_LAW | HOOKES_LAW_SPRING | FRICTION | DRAG;
   
 
   if(argc < 2){
-    printf("Usage: layout [-f filename] [-gui] [-Ke 500] [-Kh 0.0005] [-i 10000] [-width 1920] [-height 1080] [-t 1] [-m 1] [-cRest -0.9]\n");
+    usage();
     return EXIT_FAILURE;
   }
-
+  
   for(int i=1; i< argc; i++){
     if(strcmp(argv[i], "-f")==0){
-      filename = argv[++i];
+      filename = readString(argc, argv, ++i);
     }else if(strcmp(argv[i], "-Ke")==0){
-      ke = atof(argv[++i]);
+      ke = readFloat(argc, argv, ++i);
     }else if(strcmp(argv[i], "-Kh")==0){
-      kh = atof(argv[++i]);
+      kh = readFloat(argc,argv, ++i);
     }else if(strcmp(argv[i], "-i")==0){
-      iterations = atoi(argv[++i]);
+      iterations = readInt(argc,argv, ++i);
     }else if(strcmp(argv[i], "-width")==0){
-      swidth = atoi(argv[++i]);
+      swidth = readInt(argc,argv, ++i);
     }else if(strcmp(argv[i], "-height")==0){
-      sheight = atoi(argv[++i]);
+      sheight = readInt(argc,argv, ++i);
     }else if(strcmp(argv[i], "-gui")==0){
       gui = true;
     }else if(strcmp(argv[i], "-t")==0){
-      time= atof(argv[++i]);
+      time= readFloat(argc,argv, ++i);
     }else if(strcmp(argv[i], "-m")==0){
-      mass= atof(argv[++i]);
+      mass= readFloat(argc,argv, ++i);
     }else if(strcmp(argv[i], "-cRest")==0){
-      coefficientOfRestitution = atof(argv[++i]);
+      coefficientOfRestitution = readFloat(argc,argv, ++i);
+    }else if(strcmp(argv[i], "-friction")==0){
+      int fricForce = readInt(argc,argv, ++i);
+      forcemode = forcemode ^ (FRICTION | DRAG);
+      forcemode = forcemode | (fricForce << 3);
+    }else if(strcmp(argv[i], "-spring")==0){
+      int springForce = readInt(argc,argv, ++i);  
+      forcemode = forcemode ^ (HOOKES_LAW_SPRING | LOG_SPRING);
+      forcemode = forcemode | (springForce << 1);
+    }else if(strcmp(argv[i], "-forces")==0){
+      int primForce = readInt(argc,argv, ++i);  
+      forcemode = forcemode ^ (COULOMBS_LAW);
+      forcemode = forcemode | (primForce);
+      
     }else{
       fprintf(stderr,"Unknown option %s\n",argv[i]);
       return EXIT_FAILURE;
@@ -69,12 +184,15 @@ int main(int argc, char** argv){
   }
 
   if(filename == NULL){
-    perror("You must include a filename\n");
+    fprintf(stderr, "You must include a filename\n");
+    usage();
+    return EXIT_FAILURE;
   }
 
   graph* g = read(filename);
   if(g == NULL){
-    perror("Creating a graph failed. Terminating\n");
+    fprintf(stderr, "Creating a graph failed. Terminating\n");
+    usage();
     return EXIT_FAILURE;
   }
  
@@ -101,6 +219,7 @@ int main(int argc, char** argv){
     glMass = mass;
     glTime = time;
     glCoefRest = coefficientOfRestitution;
+    glForcemode = forcemode;
     glutMainLoop();
 
   }
@@ -112,7 +231,7 @@ int main(int argc, char** argv){
   */
   graph_toSVG(g, "before.svg", swidth, sheight);
   
-  graph_layout(g,swidth,sheight,iterations, ke, kh, mass, time, coefficientOfRestitution);
+  graph_layout(g,swidth,sheight,iterations, ke, kh, mass, time, coefficientOfRestitution, forcemode);
 
   graph_toSVG(g, "after.svg",swidth,sheight);
   graph_free(g);
@@ -179,7 +298,7 @@ void display(){
 }
 
 void idle(){
-  graph_layout(glGraph,glWidth,glHeight,glIter, glKe, glKh, glMass, glTime, glCoefRest);
+  graph_layout(glGraph,glWidth,glHeight,glIter, glKe, glKh, glMass, glTime, glCoefRest, glForcemode);
   glutPostRedisplay();
 }
 

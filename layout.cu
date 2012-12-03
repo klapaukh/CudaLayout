@@ -3,7 +3,7 @@
 
 #include "layout.h"
 
-__global__ void layout(node* nodes, unsigned char* edges, int numNodes, int width, int height, int iterations, float ke, float kh, float mass, float time, float coefficientOfRestitution){
+__global__ void layout(node* nodes, unsigned char* edges, int numNodes, int width, int height, int iterations, float ke, float kh, float mass, float time, float coefficientOfRestitution, int forcemode){
   int me = blockIdx.x * 8 + threadIdx.x;
   
   if(me >= numNodes){
@@ -23,18 +23,19 @@ __global__ void layout(node* nodes, unsigned char* edges, int numNodes, int widt
       float dist = sqrtf(dx*dx + dy *dy);
 
       //Work out the repulsive coulombs law force      
-      float q1 = 3, q2 = 3;
-
-      if(dist < 1 || !isfinite(dist)){
-	dist = 1;
-      }
-      float f = ke*q1*q2/ (dist*dist * dist);
-      if(isfinite(f)){
-	fx += dx * f;
+      if((forcemode & COULOMBS_LAW) != 0){
+	float q1 = 3, q2 = 3;
+	
+	if(dist < 1 || !isfinite(dist)){
+	  dist = 1;
+	}
+	float f = ke*q1*q2/ (dist*dist * dist);
+	if(isfinite(f)){
+	  fx += dx * f;
 	fy += dy * f;
+	}
       }
-      
-      if(edges[i + me * numNodes]){
+      if((forcemode & HOOKES_LAW_SPRING) != 0 && edges[i + me * numNodes]){
 	//Attractive spring force
 	//float naturalDistance = nodes[i].width + nodes[me].height; //TODO different sizes
 	float naturalWidth = nodes[i].width + nodes[me].width;
@@ -53,22 +54,24 @@ __global__ void layout(node* nodes, unsigned char* edges, int numNodes, int widt
     float normx = nodes[me].dx / speed;
     float normy = nodes[me].dy / speed;
     
-    if(nodes[me].dx == 0 && nodes[me].dy ==0 ){
-      //I am stationary
-      float fFric = Mus * mass * g;
-      if(abs(fFric* normx) >= abs(fx)  && abs(fFric*normx) >= abs(fy)){
-	fx = fy = 0;
+    if((forcemode & FRICTION) != 0){
+      if(nodes[me].dx == 0 && nodes[me].dy ==0 ){
+	//I am stationary
+	float fFric = Mus * mass * g;
+	if(abs(fFric* normx) >= abs(fx)  && abs(fFric*normx) >= abs(fy)){
+	  fx = fy = 0;
       }else{
-	//Just ignore friction this tick -- only really happens once
+	  //Just ignore friction this tick -- only really happens once
+	}
+      }else{
+	float fFric = Muk * mass * g;
+	fx += -copysign(fFric*normx, nodes[me].dx);
+	fy += -copysign(fFric*normy, nodes[me].dy);
       }
-    }else{
-      float fFric = Muk * mass * g;
-      fx += -copysign(fFric*normx, nodes[me].dx);
-      fy += -copysign(fFric*normy, nodes[me].dy);
     }
     
     //Drag
-    if(speed != 0){
+    if((forcemode & DRAG)!= 0 &&  speed != 0){
       float crossSec = nodes[me].width / 1000.0f;
       float fDrag = 0.25f * crossSec * speed * speed;
       float fdx = -copysign(fDrag * normx, nodes[me].dx);
@@ -145,7 +148,7 @@ __global__ void layout(node* nodes, unsigned char* edges, int numNodes, int widt
 }
 
 
-void graph_layout(graph* g, int width, int height, int iterations, float ke, float kh, float mass, float time, float coefficientOfRestitution){
+void graph_layout(graph* g, int width, int height, int iterations, float ke, float kh, float mass, float time, float coefficientOfRestitution, int forcemode){
   /*
     need to allocate memory for nodes and edges on the device
   */
@@ -181,7 +184,7 @@ void graph_layout(graph* g, int width, int height, int iterations, float ke, flo
   int nth = 8;
   int nbl = ceil(g->numNodes / 8.0);
   //printf("Graph has %d nodes with %d blocks and %d threads\n", g->numNodes, nbl, nth);
-  layout<<<nbl,nth>>>(nodes_device, edges_device, g->numNodes,width,height, iterations,ke, kh, mass, time, coefficientOfRestitution);
+  layout<<<nbl,nth>>>(nodes_device, edges_device, g->numNodes,width,height, iterations,ke, kh, mass, time, coefficientOfRestitution, forcemode);
   
   /*After computation you must copy the results back*/
   err = cudaMemcpy(g->nodes, nodes_device, sizeof(node)* g->numNodes, cudaMemcpyDeviceToHost);
