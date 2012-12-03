@@ -29,15 +29,19 @@ void usage(){
   fprintf(stderr, "Forces:\n");
 
   fprintf(stderr, "\nFriction:\n");
-  fprintf(stderr, " Friction     - 1\n");
-  fprintf(stderr, " Drag         - 2\n");
+  fprintf(stderr, " Friction            - 1\n");
+  fprintf(stderr, " Drag                - 2\n");
 
   fprintf(stderr, "\nSpring:\n");
-  fprintf(stderr, " Hooke's Law  - 1\n");
-  fprintf(stderr, " Log Law      - 2\n");
+  fprintf(stderr, " Hooke's Law         - 1\n");
+  fprintf(stderr, " Log Law             - 2\n");
 
   fprintf(stderr, "\nPrimary:\n");
-  fprintf(stderr, " Coulombs Law - 1\n"); 
+  fprintf(stderr, " Coulombs Law        - 1\n"); 
+  fprintf(stderr, " Charged Walls       - 2\n"); 
+  fprintf(stderr, " Degree-Based Charge - 4\n"); 
+  fprintf(stderr, " Charged Edges       - 8\n"); 
+  fprintf(stderr, " Wrap Around Forces  - 16\n"); 
 
 }
 
@@ -167,15 +171,15 @@ int main(int argc, char** argv){
     }else if(strcmp(argv[i], "-friction")==0){
       int fricForce = readInt(argc,argv, ++i);
       forcemode = forcemode ^ (FRICTION | DRAG);
-      forcemode = forcemode | (fricForce << 3);
+      forcemode = forcemode | (fricForce << 2);
     }else if(strcmp(argv[i], "-spring")==0){
       int springForce = readInt(argc,argv, ++i);  
       forcemode = forcemode ^ (HOOKES_LAW_SPRING | LOG_SPRING);
-      forcemode = forcemode | (springForce << 1);
+      forcemode = forcemode | (springForce);
     }else if(strcmp(argv[i], "-forces")==0){
       int primForce = readInt(argc,argv, ++i);  
       forcemode = forcemode ^ (COULOMBS_LAW);
-      forcemode = forcemode | (primForce);
+      forcemode = forcemode | (primForce << 4);
       
     }else{
       fprintf(stderr,"Unknown option %s\n",argv[i]);
