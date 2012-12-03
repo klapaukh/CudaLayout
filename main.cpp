@@ -21,11 +21,11 @@ void initCamera(int,int);
 
 graph* glGraph = NULL;
 int glWidth, glHeight, glIter, glForcemode;
-float glKe, glKh, glMass, glTime, glCoefRest;
+float glKe, glKh, glMass, glTime, glCoefRest, glMus, glMuk;
 
 
 void usage(){
-  fprintf(stderr, "Usage: layout [-f filename] [-gui] [-Ke 500] [-Kh 0.0005] [-Kn 3] [-i 10000] [-width 1920] [-height 1080] [-t 1] [-m 1] [-cRest -0.9] [-friction 3] [-spring 1] [-walls 1] [-forces 1]\n");
+  fprintf(stderr, "Usage: layout [-f filename] [-gui] [-Ke 500] [-Kh 0.0005] [-Kn 3] [-mus 0.3] [-muk 0.04] [-i 10000] [-width 1920] [-height 1080] [-t 1] [-m 1] [-cRest -0.9] [-friction 3] [-spring 1] [-walls 1] [-forces 1]\n");
   fprintf(stderr, "Forces:\n");
 
   fprintf(stderr, "\nFriction:\n");
@@ -144,6 +144,8 @@ int main(int argc, char** argv){
   float time = 1;
   float coefficientOfRestitution = -0.9;
   float nodeCharge = 3;
+  float mus = 0.2;
+  float muk = 0.04;
   int forcemode = COULOMBS_LAW | HOOKES_LAW_SPRING | FRICTION | DRAG | BOUNCY_WALLS;
   
 
@@ -161,6 +163,10 @@ int main(int argc, char** argv){
       kh = readFloat(argc,argv, ++i);
     }else if(strcmp(argv[i], "-Kn")==0){
       nodeCharge = readFloat(argc,argv, ++i);
+    }else if(strcmp(argv[i], "-mus")==0){
+      mus = readFloat(argc,argv, ++i);
+    }else if(strcmp(argv[i], "-muk")==0){
+      muk = readFloat(argc,argv, ++i);
     }else if(strcmp(argv[i], "-i")==0){
       iterations = readInt(argc,argv, ++i);
     }else if(strcmp(argv[i], "-width")==0){
@@ -236,6 +242,8 @@ int main(int argc, char** argv){
     glTime = time;
     glCoefRest = coefficientOfRestitution;
     glForcemode = forcemode;
+    glMus = mus;
+    glMuk = muk;
     glutMainLoop();
 
   }
@@ -247,7 +255,7 @@ int main(int argc, char** argv){
   */
   graph_toSVG(g, "before.svg", swidth, sheight, (forcemode & (BOUNCY_WALLS | CHARGED_WALLS)) != 0);
   
-  graph_layout(g,swidth,sheight,iterations, ke, kh, mass, time, coefficientOfRestitution, forcemode);
+  graph_layout(g,swidth,sheight,iterations, ke, kh, mass, time, coefficientOfRestitution, forcemode, mus, muk);
 
   graph_toSVG(g, "after.svg",swidth,sheight, (forcemode & (BOUNCY_WALLS | CHARGED_WALLS)) != 0);
   graph_free(g);
@@ -340,7 +348,7 @@ void display(){
 }
 
 void idle(){
-  graph_layout(glGraph,glWidth,glHeight,glIter, glKe, glKh, glMass, glTime, glCoefRest, glForcemode);
+  graph_layout(glGraph,glWidth,glHeight,glIter, glKe, glKh, glMass, glTime, glCoefRest, glForcemode, glMus, glMuk);
   glutPostRedisplay();
 }
 

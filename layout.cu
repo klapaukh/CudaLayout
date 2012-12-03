@@ -3,7 +3,7 @@
 
 #include "layout.h"
 
-__global__ void layout(node* nodes, unsigned char* edges, int numNodes, int width, int height, int iterations, float ke, float kh, float mass, float time, float coefficientOfRestitution, int forcemode){
+__global__ void layout(node* nodes, unsigned char* edges, int numNodes, int width, int height, int iterations, float ke, float kh, float mass, float time, float coefficientOfRestitution, int forcemode, float Mus, float Muk){
   int me = blockIdx.x * 8 + threadIdx.x;
   
   if(me >= numNodes){
@@ -47,8 +47,6 @@ __global__ void layout(node* nodes, unsigned char* edges, int numNodes, int widt
 
     //Friction against ground
     float g = 9.8f;
-    float Muk = 0.04; //Kinetic Friction Coefficient
-    float Mus = 0.2; //Static Friction Coefficient
     float speed = nodes[me].dx * nodes[me].dx + nodes[me].dy * nodes[me].dy;
     speed = sqrt(speed);
     float normx = nodes[me].dx / speed;
@@ -72,7 +70,7 @@ __global__ void layout(node* nodes, unsigned char* edges, int numNodes, int widt
     
     //Drag
     if((forcemode & DRAG)!= 0 &&  speed != 0){
-      float crossSec = nodes[me].width / 1000.0f;
+      float crossSec = nodes[me].width / 100.0f; //Conversion to m?
       float fDrag = 0.25f * crossSec * speed * speed;
       float fdx = -copysign(fDrag * normx, nodes[me].dx);
       float fdy = -copysign(fDrag * normy, nodes[me].dy);
@@ -153,7 +151,7 @@ __global__ void layout(node* nodes, unsigned char* edges, int numNodes, int widt
 }
 
 
-void graph_layout(graph* g, int width, int height, int iterations, float ke, float kh, float mass, float time, float coefficientOfRestitution, int forcemode){
+void graph_layout(graph* g, int width, int height, int iterations, float ke, float kh, float mass, float time, float coefficientOfRestitution, int forcemode, float mus, float muk){
   /*
     need to allocate memory for nodes and edges on the device
   */
@@ -189,7 +187,7 @@ void graph_layout(graph* g, int width, int height, int iterations, float ke, flo
   int nth = 8;
   int nbl = ceil(g->numNodes / 8.0);
   //printf("Graph has %d nodes with %d blocks and %d threads\n", g->numNodes, nbl, nth);
-  layout<<<nbl,nth>>>(nodes_device, edges_device, g->numNodes,width,height, iterations,ke, kh, mass, time, coefficientOfRestitution, forcemode);
+  layout<<<nbl,nth>>>(nodes_device, edges_device, g->numNodes,width,height, iterations,ke, kh, mass, time, coefficientOfRestitution, forcemode, mus, muk);
   
   /*After computation you must copy the results back*/
   err = cudaMemcpy(g->nodes, nodes_device, sizeof(node)* g->numNodes, cudaMemcpyDeviceToHost);
