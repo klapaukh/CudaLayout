@@ -21,7 +21,7 @@ void initCamera(int,int);
 
 graph* glGraph = NULL;
 int glWidth, glHeight, glIter, glForcemode;
-float glKe, glKh, glMass, glTime, glCoefRest, glMus, glMuk, glKl;
+float glKe, glKh, glMass, glTime, glCoefRest, glMus, glMuk, glKl, glKw;
 
 
 void usage(){
@@ -147,6 +147,7 @@ int main(int argc, char** argv){
   float nodeCharge = 3;
   float mus = 0.2;
   float muk = 0.04;
+  float kw = 3;
   int forcemode = COULOMBS_LAW | HOOKES_LAW_SPRING | FRICTION | DRAG | BOUNCY_WALLS;
   
 
@@ -195,7 +196,7 @@ int main(int argc, char** argv){
     }else if(strcmp(argv[i], "-walls")==0){
       int wallForce = readInt(argc,argv, ++i);
       forcemode = forcemode & ~(BOUNCY_WALLS | CHARGED_WALLS);
-      forcemode = forcemode | (wallForce);
+      forcemode = forcemode | (wallForce<<4);
     }else if(strcmp(argv[i], "-forces")==0){
       int primForce = readInt(argc,argv, ++i);  
       forcemode = forcemode & ~(COULOMBS_LAW | DEGREE_BASED_CHARGE | CHARGED_EDGE_CENTERS | WRAP_AROUND_FORCES);
@@ -206,6 +207,7 @@ int main(int argc, char** argv){
       return EXIT_FAILURE;
     }
   }
+  
   
 
   if(filename == NULL){
@@ -248,6 +250,7 @@ int main(int argc, char** argv){
     glMus = mus;
     glMuk = muk;
     glKl = kl;
+    glKw = kw;
     glutMainLoop();
 
   }
@@ -259,7 +262,7 @@ int main(int argc, char** argv){
   */
   graph_toSVG(g, "before.svg", swidth, sheight, (forcemode & (BOUNCY_WALLS | CHARGED_WALLS)) != 0);
   
-  graph_layout(g,swidth,sheight,iterations, ke, kh, mass, time, coefficientOfRestitution, forcemode, mus, muk,kl);
+  graph_layout(g,swidth,sheight,iterations, ke, kh, mass, time, coefficientOfRestitution, forcemode, mus, muk,kl, kw);
 
   graph_toSVG(g, "after.svg",swidth,sheight, (forcemode & (BOUNCY_WALLS | CHARGED_WALLS)) != 0);
   graph_free(g);
@@ -352,7 +355,7 @@ void display(){
 }
 
 void idle(){
-  graph_layout(glGraph,glWidth,glHeight,glIter, glKe, glKh, glMass, glTime, glCoefRest, glForcemode, glMus, glMuk, glKl);
+  graph_layout(glGraph,glWidth,glHeight,glIter, glKe, glKh, glMass, glTime, glCoefRest, glForcemode, glMus, glMuk, glKl,glKw);
   glutPostRedisplay();
 }
 

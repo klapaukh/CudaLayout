@@ -3,7 +3,7 @@
 
 #include "layout.h"
 
-__global__ void layout(node* nodes, unsigned char* edges, int numNodes, int width, int height, int iterations, float ke, float kh, float mass, float time, float coefficientOfRestitution, int forcemode, float Mus, float Muk, float kl){
+__global__ void layout(node* nodes, unsigned char* edges, int numNodes, int width, int height, int iterations, float ke, float kh, float mass, float time, float coefficientOfRestitution, int forcemode, float Mus, float Muk, float kl, float kw){
   int me = blockIdx.x * 8 + threadIdx.x;
   
   if(me >= numNodes){
@@ -51,6 +51,20 @@ __global__ void layout(node* nodes, unsigned char* edges, int numNodes, int widt
 	fx += springF * dx/dist;
         fy += springF * dy/dist;   
       }
+    }
+
+
+    //Charged walls if they are active
+    if((forcemode & CHARGED_WALLS) != 0 ){
+      float x = nodes[me].x;
+      float y = nodes[me].y;
+      float charge = ke * kw * nodes[me].charge;
+      float forcexl = charge / ((x-1) *(x-1));
+      float forceyt = charge / ((y-1) * (y-1)); 
+      float forcexr = -charge / ((width+1-x) *(width+1 - x));
+      float forceyb = -charge / ((height+1 - y) *(height+1 - y));   
+      fx += forcexl + forcexr;
+      fy += forceyb + forceyt;
     }
 
     //Friction against ground
@@ -159,7 +173,7 @@ __global__ void layout(node* nodes, unsigned char* edges, int numNodes, int widt
 }
 
 
-void graph_layout(graph* g, int width, int height, int iterations, float ke, float kh, float mass, float time, float coefficientOfRestitution, int forcemode, float mus, float muk, float kl){
+void graph_layout(graph* g, int width, int height, int iterations, float ke, float kh, float mass, float time, float coefficientOfRestitution, int forcemode, float mus, float muk, float kl, float kw){
   /*
     need to allocate memory for nodes and edges on the device
   */
@@ -195,7 +209,7 @@ void graph_layout(graph* g, int width, int height, int iterations, float ke, flo
   int nth = 8;
   int nbl = ceil(g->numNodes / 8.0);
   //printf("Graph has %d nodes with %d blocks and %d threads\n", g->numNodes, nbl, nth);
-  layout<<<nbl,nth>>>(nodes_device, edges_device, g->numNodes,width,height, iterations,ke, kh, mass, time, coefficientOfRestitution, forcemode, mus, muk, kl);
+  layout<<<nbl,nth>>>(nodes_device, edges_device, g->numNodes,width,height, iterations,ke, kh, mass, time, coefficientOfRestitution, forcemode, mus, muk, kl,kw);
   
   /*After computation you must copy the results back*/
   err = cudaMemcpy(g->nodes, nodes_device, sizeof(node)* g->numNodes, cudaMemcpyDeviceToHost);

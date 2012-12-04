@@ -14,7 +14,7 @@ mass
 time
 forceMode
  */
-void graph_layout(graph* g, int width, int height, int iterations, float ke, float kh, float mass, float time, float coefficientOfResititution, int forcemode, float mus, float muk, float kl);
+void graph_layout(graph* g, int width, int height, int iterations, float ke, float kh, float mass, float time, float coefficientOfResititution, int forcemode, float mus, float muk, float kl, float kw);
 
 //Force Modes 
 #define HOOKES_LAW_SPRING 1 << 0
