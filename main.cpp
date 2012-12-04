@@ -21,11 +21,11 @@ void initCamera(int,int);
 
 graph* glGraph = NULL;
 int glWidth, glHeight, glIter, glForcemode;
-float glKe, glKh, glMass, glTime, glCoefRest, glMus, glMuk;
+float glKe, glKh, glMass, glTime, glCoefRest, glMus, glMuk, glKl;
 
 
 void usage(){
-  fprintf(stderr, "Usage: layout [-f filename] [-gui] [-Ke 500] [-Kh 0.0005] [-Kn 3] [-mus 0.3] [-muk 0.04] [-i 10000] [-width 1920] [-height 1080] [-t 1] [-m 1] [-cRest -0.9] [-friction 3] [-spring 1] [-walls 1] [-forces 1]\n");
+  fprintf(stderr, "Usage: layout [-f filename] [-gui] [-Ke 500] [-Kh 0.0005] [-Kl -0.05] [-Kn 3] [-mus 0.3] [-muk 0.04] [-i 10000] [-width 1920] [-height 1080] [-t 1] [-m 1] [-cRest -0.9] [-friction 3] [-spring 1] [-walls 1] [-forces 1]\n");
   fprintf(stderr, "Forces:\n");
 
   fprintf(stderr, "\nFriction:\n");
@@ -135,6 +135,7 @@ int main(int argc, char** argv){
 
   float ke = 500;
   float kh = 0.0005;
+  float kl = -0.05;
   const char* filename = NULL;
   int swidth = 1920;
   int sheight = 1080;
@@ -161,6 +162,8 @@ int main(int argc, char** argv){
       ke = readFloat(argc, argv, ++i);
     }else if(strcmp(argv[i], "-Kh")==0){
       kh = readFloat(argc,argv, ++i);
+    }else if(strcmp(argv[i], "-Kl")==0){
+      kl = readFloat(argc,argv, ++i);
     }else if(strcmp(argv[i], "-Kn")==0){
       nodeCharge = readFloat(argc,argv, ++i);
     }else if(strcmp(argv[i], "-mus")==0){
@@ -244,6 +247,7 @@ int main(int argc, char** argv){
     glForcemode = forcemode;
     glMus = mus;
     glMuk = muk;
+    glKl = kl;
     glutMainLoop();
 
   }
@@ -255,7 +259,7 @@ int main(int argc, char** argv){
   */
   graph_toSVG(g, "before.svg", swidth, sheight, (forcemode & (BOUNCY_WALLS | CHARGED_WALLS)) != 0);
   
-  graph_layout(g,swidth,sheight,iterations, ke, kh, mass, time, coefficientOfRestitution, forcemode, mus, muk);
+  graph_layout(g,swidth,sheight,iterations, ke, kh, mass, time, coefficientOfRestitution, forcemode, mus, muk,kl);
 
   graph_toSVG(g, "after.svg",swidth,sheight, (forcemode & (BOUNCY_WALLS | CHARGED_WALLS)) != 0);
   graph_free(g);
@@ -348,7 +352,7 @@ void display(){
 }
 
 void idle(){
-  graph_layout(glGraph,glWidth,glHeight,glIter, glKe, glKh, glMass, glTime, glCoefRest, glForcemode, glMus, glMuk);
+  graph_layout(glGraph,glWidth,glHeight,glIter, glKe, glKh, glMass, glTime, glCoefRest, glForcemode, glMus, glMuk, glKl);
   glutPostRedisplay();
 }
 
