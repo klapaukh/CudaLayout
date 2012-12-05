@@ -20,12 +20,11 @@ void setLight();
 void initCamera(int,int);
 
 graph* glGraph = NULL;
-int glWidth, glHeight, glIter, glForcemode;
-float glKe, glKh, glMass, glTime, glCoefRest, glMus, glMuk, glKl, glKw;
+layout_params* glParams = NULL;
 
 
 void usage(){
-  fprintf(stderr, "Usage: layout [-f filename] [-gui] [-Ke 500] [-Kh 0.0005] [-Kl -0.05] [-Kn 3] [-mus 0.3] [-muk 0.04] [-i 10000] [-width 1920] [-height 1080] [-t 1] [-m 1] [-cRest -0.9] [-friction 3] [-spring 1] [-walls 1] [-forces 1]\n");
+  fprintf(stderr, "Usage: layout [-f filename] [-gui] [-Ke 500] [-Kh 0.0005] [-Kl -0.05] [-Kn 3] [-Kg 0.06] [-mus 0.3] [-muk 0.04] [-i 10000] [-width 1920] [-height 1080] [-t 1] [-nm 1] [-m 1] [-cRest -0.9] [-friction 3] [-spring 1] [-walls 1] [-forces 1]\n");
   fprintf(stderr, "Forces:\n");
 
   fprintf(stderr, "\nFriction:\n");
@@ -39,6 +38,7 @@ void usage(){
   fprintf(stderr, "\nWalls:\n");
   fprintf(stderr, " Bouncy Walls        - 1\n");
   fprintf(stderr, " Charged Walls       - 2\n");
+  fprintf(stderr, " Gravity Well        - 4\n");
   
 
   fprintf(stderr, "\nPrimary:\n");
@@ -133,22 +133,26 @@ int main(int argc, char** argv){
   /*Check arguments to make sure you got a file*/
   //There must be at least some arguments to get a file
 
-  float ke = 500;
-  float kh = 0.0005;
-  float kl = -0.05;
   const char* filename = NULL;
-  int swidth = 1920;
-  int sheight = 1080;
-  int iterations = 10000;
   bool gui = false;
-  float mass = 1;
-  float time = 1;
-  float coefficientOfRestitution = -0.9;
   float nodeCharge = 3;
-  float mus = 0.2;
-  float muk = 0.04;
-  float kw = 3;
-  int forcemode = COULOMBS_LAW | HOOKES_LAW_SPRING | FRICTION | DRAG | BOUNCY_WALLS;
+
+  layout_params* params = (layout_params*)malloc(sizeof(layout_params));
+  params->ke = 500;
+  params->kh = 0.0005;
+  params->kl = -0.05;
+  params->width = 1920;
+  params->height = 1080;
+  params->iterations = 10000;
+  params-> mass = 1;
+  params->time = 1;
+  params->coefficientOfRestitution = -0.9;
+  params->mus = 0.2;
+  params->muk = 0.04;
+  params->kw = 3;
+  params->kg = 0.06;
+  params->wellMass = 1;
+  params->forcemode = COULOMBS_LAW | HOOKES_LAW_SPRING | FRICTION | DRAG | BOUNCY_WALLS;
   
 
   if(argc < 2){
@@ -160,47 +164,51 @@ int main(int argc, char** argv){
     if(strcmp(argv[i], "-f")==0){
       filename = readString(argc, argv, ++i);
     }else if(strcmp(argv[i], "-Ke")==0){
-      ke = readFloat(argc, argv, ++i);
+      params->ke = readFloat(argc, argv, ++i);
     }else if(strcmp(argv[i], "-Kh")==0){
-      kh = readFloat(argc,argv, ++i);
+      params->kh = readFloat(argc,argv, ++i);
     }else if(strcmp(argv[i], "-Kl")==0){
-      kl = readFloat(argc,argv, ++i);
+      params->kl = readFloat(argc,argv, ++i);
     }else if(strcmp(argv[i], "-Kn")==0){
       nodeCharge = readFloat(argc,argv, ++i);
+    }else if(strcmp(argv[i], "-Kg")==0){
+      params->kg = readFloat(argc,argv, ++i);
+    }else if(strcmp(argv[i], "-nm")==0){
+      params->wellMass = readFloat(argc,argv, ++i);
     }else if(strcmp(argv[i], "-mus")==0){
-      mus = readFloat(argc,argv, ++i);
+      params->mus = readFloat(argc,argv, ++i);
     }else if(strcmp(argv[i], "-muk")==0){
-      muk = readFloat(argc,argv, ++i);
+      params->muk = readFloat(argc,argv, ++i);
     }else if(strcmp(argv[i], "-i")==0){
-      iterations = readInt(argc,argv, ++i);
+      params->iterations = readInt(argc,argv, ++i);
     }else if(strcmp(argv[i], "-width")==0){
-      swidth = readInt(argc,argv, ++i);
+      params->width = readInt(argc,argv, ++i);
     }else if(strcmp(argv[i], "-height")==0){
-      sheight = readInt(argc,argv, ++i);
+      params->height = readInt(argc,argv, ++i);
     }else if(strcmp(argv[i], "-gui")==0){
       gui = true;
     }else if(strcmp(argv[i], "-t")==0){
-      time= readFloat(argc,argv, ++i);
+      params->time= readFloat(argc,argv, ++i);
     }else if(strcmp(argv[i], "-m")==0){
-      mass= readFloat(argc,argv, ++i);
+      params->mass= readFloat(argc,argv, ++i);
     }else if(strcmp(argv[i], "-cRest")==0){
-      coefficientOfRestitution = readFloat(argc,argv, ++i);
+      params->coefficientOfRestitution = readFloat(argc,argv, ++i);
     }else if(strcmp(argv[i], "-friction")==0){
       int fricForce = readInt(argc,argv, ++i);
-      forcemode = forcemode & ~(FRICTION | DRAG);
-      forcemode = forcemode | (fricForce << 2);
+      params->forcemode = params->forcemode & ~(FRICTION | DRAG);
+      params->forcemode = params->forcemode | (fricForce << 2);
     }else if(strcmp(argv[i], "-spring")==0){
       int springForce = readInt(argc,argv, ++i);  
-      forcemode = forcemode & ~(HOOKES_LAW_SPRING | LOG_SPRING);
-      forcemode = forcemode | (springForce);
+      params->forcemode = params->forcemode & ~(HOOKES_LAW_SPRING | LOG_SPRING);
+      params->forcemode = params->forcemode | (springForce);
     }else if(strcmp(argv[i], "-walls")==0){
       int wallForce = readInt(argc,argv, ++i);
-      forcemode = forcemode & ~(BOUNCY_WALLS | CHARGED_WALLS);
-      forcemode = forcemode | (wallForce<<4);
+      params->forcemode = params->forcemode & ~(BOUNCY_WALLS | CHARGED_WALLS | GRAVITY_WELL);
+      params->forcemode = params->forcemode | (wallForce<<4);
     }else if(strcmp(argv[i], "-forces")==0){
       int primForce = readInt(argc,argv, ++i);  
-      forcemode = forcemode & ~(COULOMBS_LAW | DEGREE_BASED_CHARGE | CHARGED_EDGE_CENTERS | WRAP_AROUND_FORCES);
-      forcemode = forcemode | (primForce << 6);
+      params->forcemode = params->forcemode & ~(COULOMBS_LAW | DEGREE_BASED_CHARGE | CHARGED_EDGE_CENTERS | WRAP_AROUND_FORCES);
+      params->forcemode = params->forcemode | (primForce << 7);
       
     }else{
       fprintf(stderr,"Unknown option %s\n",argv[i]);
@@ -223,12 +231,12 @@ int main(int argc, char** argv){
     return EXIT_FAILURE;
   }
  
-  graph_initRandom(g,20,10,swidth,sheight, nodeCharge);
+  graph_initRandom(g,20,10,params->width,params->height, nodeCharge);
 
   if(gui){
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA | GLUT_DEPTH);
-    glutInitWindowSize(swidth, sheight);
+    glutInitWindowSize(params->width, params->height);
     glutCreateWindow("Force Directed Layout");
 
     glutDisplayFunc(display);
@@ -236,21 +244,9 @@ int main(int argc, char** argv){
     glutIdleFunc(idle);
 
     setLight();
-    initCamera(swidth,sheight);
+    initCamera(params->width,params->height);
     glGraph = g; 
-    glWidth = swidth;
-    glHeight = sheight;
-    glKe = ke;
-    glKh = kh;
-    glIter = iterations;
-    glMass = mass;
-    glTime = time;
-    glCoefRest = coefficientOfRestitution;
-    glForcemode = forcemode;
-    glMus = mus;
-    glMuk = muk;
-    glKl = kl;
-    glKw = kw;
+    glParams = params;
     glutMainLoop();
 
   }
@@ -260,11 +256,11 @@ int main(int argc, char** argv){
   /*The graph is now is a legal state. 
     It is possible to lay it out now
   */
-  graph_toSVG(g, "before.svg", swidth, sheight, (forcemode & (BOUNCY_WALLS | CHARGED_WALLS)) != 0);
+  graph_toSVG(g, "before.svg", params->width, params->height, (params->forcemode & (BOUNCY_WALLS | CHARGED_WALLS)) != 0);
   
-  graph_layout(g,swidth,sheight,iterations, ke, kh, mass, time, coefficientOfRestitution, forcemode, mus, muk,kl, kw);
+  graph_layout(g,params);
 
-  graph_toSVG(g, "after.svg",swidth,sheight, (forcemode & (BOUNCY_WALLS | CHARGED_WALLS)) != 0);
+  graph_toSVG(g, "after.svg",params->width,params->height, (params->forcemode & (BOUNCY_WALLS | CHARGED_WALLS)) != 0);
   graph_free(g);
   return EXIT_SUCCESS;
 
@@ -280,7 +276,7 @@ void display(){
   glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE);
 
 
-  if((glForcemode & (CHARGED_WALLS | BOUNCY_WALLS)) == 0){
+  if((glParams->forcemode & (CHARGED_WALLS | BOUNCY_WALLS)) == 0){
     //I actually need to normalise all the values for drawing
     float minx= FLT_MAX, maxx= FLT_MIN, miny = FLT_MAX, maxy= FLT_MIN;
     for(int i=0 ;i < glGraph ->numNodes;i++){
@@ -355,7 +351,7 @@ void display(){
 }
 
 void idle(){
-  graph_layout(glGraph,glWidth,glHeight,glIter, glKe, glKh, glMass, glTime, glCoefRest, glForcemode, glMus, glMuk, glKl,glKw);
+  graph_layout(glGraph,glParams);
   glutPostRedisplay();
 }
 
