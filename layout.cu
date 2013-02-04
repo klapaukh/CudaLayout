@@ -199,19 +199,19 @@ void graph_layout(graph* g, layout_params* params){
 
   err = cudaMalloc(&edges_device, sizeof(unsigned char)* g->numNodes* g->numNodes);
   if(err != cudaSuccess){
-    printf("Memory allocation for edges failed\n");
+    printf("Memory allocation for edges failed on GPU\n");
     return;
   }
   
   err = cudaMalloc(&nodes_device, sizeof(node) * g->numNodes);
   if(err != cudaSuccess){
-    printf("Memory allocation for nodes failed\n");
+    printf("Memory allocation for nodes failed on GPU\n");
     return;
   }
 
   err = cudaMalloc(&params_device, sizeof(layout_params));
   if(err != cudaSuccess){
-    printf("Memory allocation for params failed\n");
+    printf("Memory allocation for params failed on GPU\n");
     return;
   }
   
