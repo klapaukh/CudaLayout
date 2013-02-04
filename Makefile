@@ -1,10 +1,10 @@
 OBJECTS=main.o layout.co graph.o graphmlReader.o
 TARGET=layout
 CC=g++
-NVCC=nvcc
-CFLAGS=-pedantic -Wall -Wextra -lint -I/opt/cuda50/include
-LDFLAGS=-Xlinker -rpath /opt/cuda50/lib64 -L/opt/cuda50/lib64 -lcudart -lexpat -lGL -lGLU -lglut
-NCFLAGS=-m64 -I/opt/cuda50/include
+NVCC=/opt/cuda/bin/nvcc
+CFLAGS=-pedantic -Wall -Wextra -lint -I/opt/cuda/include
+LDFLAGS=-Xlinker -rpath /opt/cuda/lib64 -L/opt/cuda/lib64 -lcudart -lexpat -lGL -lGLU -lglut
+NCFLAGS=-m64 -I/opt/cuda/include
 
 all: $(TARGET)
 
