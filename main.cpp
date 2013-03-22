@@ -39,13 +39,13 @@ void usage(){
   fprintf(stderr, " Bouncy Walls        - 1\n");
   fprintf(stderr, " Charged Walls       - 2\n");
   fprintf(stderr, " Gravity Well        - 4\n");
-  
+
 
   fprintf(stderr, "\nPrimary:\n");
-  fprintf(stderr, " Coulombs Law        - 1\n"); 
-  fprintf(stderr, " Degree-Based Charge - 2\n"); 
-  fprintf(stderr, " Charged Edges       - 4\n"); 
-  fprintf(stderr, " Wrap Around Forces  - 8\n"); 
+  fprintf(stderr, " Coulombs Law        - 1\n");
+  fprintf(stderr, " Degree-Based Charge - 2\n");
+  fprintf(stderr, " Charged Edges       - 4\n");
+  fprintf(stderr, " Wrap Around Forces  - 8\n");
 
 }
 
@@ -54,7 +54,7 @@ int readInt(int argc, char** argv, int i){
     fprintf(stderr, "An int was not provided to %s\n", argv[i-1]);
     exit(EXIT_FAILURE);
   }
-    
+
   if(errno != 0){
     perror("Something went wrong before readInt started");
   }
@@ -153,13 +153,13 @@ int main(int argc, char** argv){
   params->kg = 0.06;
   params->wellMass = 1;
   params->forcemode = COULOMBS_LAW | HOOKES_LAW_SPRING | FRICTION | DRAG | BOUNCY_WALLS;
-  
+
 
   if(argc < 2){
     usage();
     return EXIT_FAILURE;
   }
-  
+
   for(int i=1; i< argc; i++){
     if(strcmp(argv[i], "-f")==0){
       filename = readString(argc, argv, ++i);
@@ -198,7 +198,7 @@ int main(int argc, char** argv){
       params->forcemode = params->forcemode & ~(FRICTION | DRAG);
       params->forcemode = params->forcemode | (fricForce << 2);
     }else if(strcmp(argv[i], "-spring")==0){
-      int springForce = readInt(argc,argv, ++i);  
+      int springForce = readInt(argc,argv, ++i);
       params->forcemode = params->forcemode & ~(HOOKES_LAW_SPRING | LOG_SPRING);
       params->forcemode = params->forcemode | (springForce);
     }else if(strcmp(argv[i], "-walls")==0){
@@ -206,17 +206,17 @@ int main(int argc, char** argv){
       params->forcemode = params->forcemode & ~(BOUNCY_WALLS | CHARGED_WALLS | GRAVITY_WELL);
       params->forcemode = params->forcemode | (wallForce<<4);
     }else if(strcmp(argv[i], "-forces")==0){
-      int primForce = readInt(argc,argv, ++i);  
+      int primForce = readInt(argc,argv, ++i);
       params->forcemode = params->forcemode & ~(COULOMBS_LAW | DEGREE_BASED_CHARGE | CHARGED_EDGE_CENTERS | WRAP_AROUND_FORCES);
       params->forcemode = params->forcemode | (primForce << 7);
-      
+
     }else{
       fprintf(stderr,"Unknown option %s\n",argv[i]);
       return EXIT_FAILURE;
     }
   }
-  
-  
+
+
 
   if(filename == NULL){
     fprintf(stderr, "You must include a filename\n");
@@ -230,7 +230,7 @@ int main(int argc, char** argv){
     usage();
     return EXIT_FAILURE;
   }
- 
+
   graph_initRandom(g,20,10,params->width,params->height, nodeCharge);
 
   if(gui){
@@ -245,7 +245,7 @@ int main(int argc, char** argv){
 
     setLight();
     initCamera(params->width,params->height);
-    glGraph = g; 
+    glGraph = g;
     glParams = params;
     glutMainLoop();
 
@@ -253,11 +253,11 @@ int main(int argc, char** argv){
 
 
 
-  /*The graph is now is a legal state. 
+  /*The graph is now is a legal state.
     It is possible to lay it out now
   */
   graph_toSVG(g, "before.svg", params->width, params->height, (params->forcemode & (BOUNCY_WALLS | CHARGED_WALLS)) != 0);
-  
+
   graph_layout(g,params);
 
   graph_toSVG(g, "after.svg",params->width,params->height, (params->forcemode & (BOUNCY_WALLS | CHARGED_WALLS)) != 0);
@@ -304,7 +304,7 @@ void display(){
   //draw edges
   glBegin(GL_LINES);
   glColor3f(1.0f, 0.0f, 0.0f); /* set object color as red */
-  
+
   for(int i =0; i < glGraph->numNodes;i++){
     for(int j = i+1; j < glGraph->numNodes;j++){
       if(glGraph->edges[i+j*glGraph->numNodes]){
@@ -333,7 +333,7 @@ void display(){
     glVertex2f(x+width,y);
     glVertex2f(x+width,y+height);
     glVertex2f(x, y+height);
-  } 
+  }
   glEnd();
 
 
@@ -346,7 +346,7 @@ void display(){
     fprintf(stderr, "%s\n", gluErrorString(error));
     error = glGetError();
   }
-  
+
   glutSwapBuffers();
 }
 
