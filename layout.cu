@@ -1,7 +1,5 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <cuda.h>
-#include <math_functions.h>
 
 #include "layout.h"
 
@@ -62,19 +60,19 @@ __global__ void layout(node* nodes, unsigned char* edges, int numNodes, layout_p
 			}
 		}
 
-		//Edge -- node repulsion
-		if ((forcemode & EDGE_NODE_REPULSION) != 0) {
-			int src;
-			int dst;
-			for (src = 0; src < numNodes; src++) {
-				for (dst = src; dst < numNodes; dst++) {
-					if (edges[src + dst * numNodes]) {
+		//Charged edges
+		if ((forcemode & CHARGED_EDGE_CENTERS) != 0) {
+			for (int src = 0; src < numNodes; src++) {
+				for (int dst = src; dst < numNodes; dst++) {
+					if (src != me && dst != me && edges[src + dst * numNodes]) {
 						//Iterate through all the edges, but don't double up, skip non edges
+						//And skip edges connected to me
 
 						//Find the position of the edge center
 						float edgex = (nodes[src].x + nodes[dst].x) / 2.0;
 						float edgey = (nodes[src].y + nodes[dst].y) / 2.0;
 
+						//----Edge - node ---//
 						//Coulombs law it!
 						float q1 = nodes[me].charge, q2 = params->edgeCharge;
 
@@ -92,14 +90,33 @@ __global__ void layout(node* nodes, unsigned char* edges, int numNodes, layout_p
 							fy += dy * f;
 						}
 
+						//--- Edge - edges --//
+						q1 = q2 = params->edgeCharge;
+						//Go through all of my edges
+						for (int end = 0; end < numNodes; end++) {
+							if (edges[me + end * numNodes]) {
+								//There is an edge between me and them!
+								float edge2x = (nodes[me].x + nodes[end].x) / 2.0;
+								float edge2y = (nodes[me].y + nodes[end].y) / 2.0;
+
+								dx = edge2x - edgex;
+								dy = edge2y - edgey;
+								float dist = sqrtf(dx * dx + dy * dy);
+
+								if (dist < 1 || !isfinite(dist)) {
+									dist = 1;
+								}
+
+								float f = (params->ke) * q1 * q2 / (dist * dist * dist);
+								if (isfinite(f)) {
+									fx += dx * f;
+									fy += dy * f;
+								}
+							}
+						}
 					}
 				}
 			}
-		}
-
-		//Edge -- Edge repulsion
-		if((forcemode * EDGE_EDGE_REPULSION) != 0){
-			//Edge edge stuff -- woo
 		}
 
 		//--------------General Update Actions--------------------------//

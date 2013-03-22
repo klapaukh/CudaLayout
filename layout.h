@@ -49,6 +49,4 @@ void graph_layout(graph* g, layout_params* params);
 #define DEGREE_BASED_CHARGE 1 << 8
 #define CHARGED_EDGE_CENTERS 1 << 9
 #define WRAP_AROUND_FORCES 1 << 10
-#define EDGE_NODE_REPULSION 1<<11
-#define EDGE_EDGE_REPULSION 1<<12
 #endif
