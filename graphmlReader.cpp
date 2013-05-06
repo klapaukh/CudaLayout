@@ -2,7 +2,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include <expat.h>
+
 #include "graphmlReader.h"
+#include "debug.h"
+
 
 //MAX_LEN is such that the index will fit into a 8 bits
 #define BUFF_SIZE 1024
@@ -178,6 +181,6 @@ graph* read(const char* filename){
   }
 
   //Graph is now actually working
-  printf("Number of Nodes: %d \nNumber of Edges: %d\n", g->numNodes, g->numEdges);
+  debug("Number of Nodes: %d \nNumber of Edges: %d\n", g->numNodes, g->numEdges);
   return g;
 }
