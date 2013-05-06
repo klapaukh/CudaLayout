@@ -4,12 +4,14 @@
 #include <limits.h>
 #include <float.h>
 #include <errno.h>
+#include <sys/time.h>
 
 #include <GL/glut.h>
 
+
 #include "graphmlReader.h"
 #include "layout.h"
-#include "statistics.h"
+
 
 //GUI stuff
 void display();
@@ -227,6 +229,7 @@ int main(int argc, char** argv) {
 		return EXIT_FAILURE;
 	}
 
+	printf("Reading graph: %s\n",filename);
 	graph* g = read(filename);
 	if (g == NULL) {
 		fprintf(stderr, "Creating a graph failed. Terminating\n");
@@ -254,16 +257,28 @@ int main(int argc, char** argv) {
 
 	}
 
-	/*The graph is now is a legal state.
+	/* The graph is now is a legal state.
 	 * It is not using the GUI.
-	 It is possible to lay it out now
+	 * It is possible to lay it out now
 	 */
 	if (output) {
 		graph_toSVG(g, "before.svg", params->width, params->height, (params->forcemode & (BOUNCY_WALLS | CHARGED_WALLS)) != 0);
 	}
+
+	struct timeval tstart,tend;
+	gettimeofday(&tstart, NULL);
+
 	graph_layout(g, params);
 
+	gettimeofday(&tend, NULL);
+	long start = tstart.tv_sec*1000000 + tstart.tv_usec;
+	long end   = tend.tv_sec*1000000 + tend.tv_usec;
+	long msElapsed = end - start;
+
+	printf("Elapsed Time (us): %ld\n", msElapsed);
+
 	compute_graph_statistics(g, params);
+
 	if (output) {
 		graph_toSVG(g, "after.svg", params->width, params->height, (params->forcemode & (BOUNCY_WALLS | CHARGED_WALLS)) != 0);
 	}

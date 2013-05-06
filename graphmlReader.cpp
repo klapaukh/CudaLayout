@@ -80,22 +80,22 @@ graph* read(const char* filename){
     printf("Allocating Memory for parser failed\n");
     return NULL;
   }
-  
+
   XML_SetElementHandler(p, startTag, endTag);
-  
+
   //Start reading the actual XML
   FILE* xmlFile = fopen(filename, "r");
   if(xmlFile == NULL){
     printf("XML file \"%s\" failed to open. Terminating\n", filename);
     return NULL;
   }
-  
+
   char buff[BUFF_SIZE];
   int len = 10;
-  
+
   //Set up the thing to pass around
   graphData data;
-  data.numNode = 0; 
+  data.numNode = 0;
   data.numEdge = 0;
   XML_SetUserData(p, &data);
   while(!feof(xmlFile)){
@@ -105,10 +105,10 @@ graph* read(const char* filename){
       fclose(xmlFile);
       return NULL;
     }
-    
+
     //Successfully read something, time to parse, woo!
     if(!XML_Parse(p, buff, len, !len)){ // len == 0 => finished => need to negate
-      fprintf(stderr, "Parse error at line %ld:\n%s\n", XML_GetCurrentLineNumber(p), 
+      fprintf(stderr, "Parse error at line %ld:\n%s\n", XML_GetCurrentLineNumber(p),
 	      XML_ErrorString(XML_GetErrorCode(p)));
       return NULL;
     }
@@ -116,12 +116,12 @@ graph* read(const char* filename){
   if(len !=0){
     XML_Parse(p, buff,0, 1); //It's definitely over
   }
-  
+
   //Finished reading the xml, so free the memory
   fclose(xmlFile);
   XML_ParserFree(p);
 
-  //data should now be sensible 
+  //data should now be sensible
   graph* g = graph_create();
   g->numNodes = data.numNode;
   g->numEdges = data.numEdge;
@@ -155,11 +155,11 @@ graph* read(const char* filename){
       g->edges[i+j*g->numNodes] = 0;
     }
   }
-  
+
   //Find the edges which actually exist!
   for(i=0; i < data.numEdge;i++){
     int sourceid = -1;
-    int targetid = -1; 
+    int targetid = -1;
     for(j=0;j < data.numNode;j++){
       if(strcmp(data.edges[i].source, data.nodes[j].id) == 0){
 	sourceid = j;
@@ -178,6 +178,6 @@ graph* read(const char* filename){
   }
 
   //Graph is now actually working
-  printf("Created graph with %d nodes and %d edges\n", g->numNodes, g->numEdges);
+  printf("Number of Nodes: %d \nNumber of Edges: %d\n", g->numNodes, g->numEdges);
   return g;
 }
