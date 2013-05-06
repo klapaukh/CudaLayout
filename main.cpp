@@ -11,6 +11,7 @@
 
 #include "graphmlReader.h"
 #include "layout.h"
+#include "debug.h"
 
 
 //GUI stuff
@@ -23,8 +24,6 @@ void initCamera(int, int);
 
 graph* glGraph = NULL;
 layout_params* glParams = NULL;
-
-void compute_graph_statistics(graph*, layout_params*);
 
 void usage() {
 	fprintf(stderr,
@@ -229,7 +228,7 @@ int main(int argc, char** argv) {
 		return EXIT_FAILURE;
 	}
 
-	printf("Reading graph: %s\n",filename);
+	debug("Reading graph: %s\n",filename);
 	graph* g = read(filename);
 	if (g == NULL) {
 		fprintf(stderr, "Creating a graph failed. Terminating\n");
@@ -275,9 +274,7 @@ int main(int argc, char** argv) {
 	long end   = tend.tv_sec*1000000 + tend.tv_usec;
 	long msElapsed = end - start;
 
-	printf("Elapsed Time (us): %ld\n", msElapsed);
-
-	compute_graph_statistics(g, params);
+	debug("Elapsed Time (us): %ld\n", msElapsed);
 
 	if (output) {
 		graph_toSVG(g, "after.svg", params->width, params->height, (params->forcemode & (BOUNCY_WALLS | CHARGED_WALLS)) != 0);
@@ -396,8 +393,4 @@ void initCamera(int width, int height) {
 	gluOrtho2D(0, width, height, 0);
 	glMatrixMode (GL_MODELVIEW);
 	glLoadIdentity();
-}
-
-void compute_graph_statistics(graph* g, layout_params* params) {
-
 }
