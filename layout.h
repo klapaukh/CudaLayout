@@ -2,6 +2,7 @@
 #define LAYOUTH
 
 #include "graph.h"
+#include "common.h"
 
 /**
 Graph layout takes a graph
@@ -15,29 +16,12 @@ time
 forceMode
  */
 
-typedef struct {
-  int width;
-  int height;
-  int iterations;
-  int forcemode;
-  float ke;
-  float kh;
-  float kl;
-  float kw;
-  float mass;
-  float time;
-  float coefficientOfRestitution;
-  float mus;
-  float muk;
-  float kg;
-  float wellMass;
-  float edgeCharge;
-} layout_params;
+
 
 
 void graph_layout(graph* g, layout_params* params);
 
-//Force Modes 
+//Force Modes
 #define HOOKES_LAW_SPRING 1 << 0
 #define LOG_SPRING 1 << 1
 #define FRICTION 1 << 2
