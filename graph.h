@@ -1,6 +1,8 @@
 #ifndef GRAPHH
 #define GRAPHH
 
+#include "common.h"
+
 typedef struct node{
   float x;
   float y;
@@ -18,7 +20,7 @@ typedef struct node{
 
 /*
   Edges is a array of indexes to the label. 0 means there is no edge.
-  Note that this means that edgeLabels is 1 bigger than numEdges. 
+  Note that this means that edgeLabels is 1 bigger than numEdges.
  */
 typedef struct graph{
   char** nodeLabels;
@@ -33,7 +35,7 @@ typedef struct graph{
 
 graph* graph_create(void);
 void graph_free(graph*);
-void graph_toSVG(graph*, const char*, int, int, bool);
+void graph_toSVG(graph*, const char*, int, int, bool,long time, layout_params* params);
 void graph_initRandom(graph*, int, int, int, int, float);
 
 

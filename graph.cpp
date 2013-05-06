@@ -58,13 +58,13 @@ void graph_initRandom(graph* g,int width, int height, int screenWidth, int scree
   }
 }
 
-void graph_toSVG(graph* g, const char* filename, int screenwidth, int screenheight, bool hasWalls){
+void graph_toSVG(graph* g, const char* filename, int screenwidth, int screenheight, bool hasWalls, long time, layout_params* params){
   FILE* svg = fopen(filename, "w");
   if(svg == NULL){
     printf("Failed to create file %s.\n",filename);
     return;
   }
-  
+
   int stat;
   stat = fprintf(svg, "<?xml version=\"1.0\" encoding=\"ISO-8859-1\" standalone=\"no\"?>\n");
   stat = fprintf(svg, "<!DOCTYPE svg PUBLIC \"-//W3C//DTD SVG 20010904//EN\"\n");
@@ -95,6 +95,33 @@ void graph_toSVG(graph* g, const char* filename, int screenwidth, int screenheig
     stat = fprintf(svg, "viewBox=\"%ld %ld %ld %ld\"\n", (long)minx, (long)miny, (long)(maxx-minx), (long)(maxy-miny));
   }
   stat = fprintf(svg, "zoomAndPan=\"disable\" >\n");
+
+  /**
+   * As a comment, print out the graph and data
+   */
+
+  stat = fprintf(svg, "<!--\n"); // Begin comment block (for easy extraction)
+  stat = fprintf(svg, "Elapsed: %ld\n", time);
+  stat = fprintf(svg, "width: %d\n", params->width);
+  stat = fprintf(svg, "height: %d\n", params->height);
+  stat = fprintf(svg, "iterations: %d\n", params->iterations);
+  stat = fprintf(svg, "forcemode: %d\n", params->forcemode);
+  stat = fprintf(svg, "ke: %f\n", params->ke);
+  stat = fprintf(svg, "kh: %f\n", params->kh);
+  stat = fprintf(svg, "kl: %f\n", params->kl);
+  stat = fprintf(svg, "kw: %f\n", params->kw);
+  stat = fprintf(svg, "mass: %f\n", params->mass);
+  stat = fprintf(svg, "time: %f\n", params->time);
+  stat = fprintf(svg, "coefficientOfRestitution: %f\n", params->coefficientOfRestitution);
+  stat = fprintf(svg, "mus: %f\n", params->mus);
+  stat = fprintf(svg, "muk: %f\n", params->muk);
+  stat = fprintf(svg, "kg: %f\n", params->kg);
+  stat = fprintf(svg, "wellMass: %f\n", params->wellMass);
+  stat = fprintf(svg, "edgeCharge: %f\n", params->edgeCharge);
+
+
+  stat = fprintf(svg, "-->\n"); // End comment block (for easy extraction)
+
 
 
   int i,j;

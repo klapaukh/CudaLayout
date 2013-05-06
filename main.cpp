@@ -261,7 +261,7 @@ int main(int argc, char** argv) {
 	 * It is possible to lay it out now
 	 */
 	if (output) {
-		graph_toSVG(g, "before.svg", params->width, params->height, (params->forcemode & (BOUNCY_WALLS | CHARGED_WALLS)) != 0);
+		graph_toSVG(g, "before.svg", params->width, params->height, (params->forcemode & (BOUNCY_WALLS | CHARGED_WALLS)) != 0,0,params);
 	}
 
 	struct timeval tstart,tend;
@@ -277,7 +277,7 @@ int main(int argc, char** argv) {
 	debug("Elapsed Time (us): %ld\n", msElapsed);
 
 	if (output) {
-		graph_toSVG(g, "after.svg", params->width, params->height, (params->forcemode & (BOUNCY_WALLS | CHARGED_WALLS)) != 0);
+		graph_toSVG(g, "after.svg", params->width, params->height, (params->forcemode & (BOUNCY_WALLS | CHARGED_WALLS)) != 0, msElapsed, params);
 	}
 	graph_free(g);
 	return EXIT_SUCCESS;
