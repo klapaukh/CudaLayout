@@ -101,7 +101,9 @@ void graph_toSVG(graph* g, const char* filename, int screenwidth, int screenheig
    */
 
   stat = fprintf(svg, "<!--\n"); // Begin comment block (for easy extraction)
-  stat = fprintf(svg, "Elapsed: %ld\n", time);
+  stat = fprintf(svg, "elapsed: %ld\n", time);
+
+  //Print the program arguments
   stat = fprintf(svg, "width: %d\n", params->width);
   stat = fprintf(svg, "height: %d\n", params->height);
   stat = fprintf(svg, "iterations: %d\n", params->iterations);
@@ -119,6 +121,15 @@ void graph_toSVG(graph* g, const char* filename, int screenwidth, int screenheig
   stat = fprintf(svg, "wellMass: %f\n", params->wellMass);
   stat = fprintf(svg, "edgeCharge: %f\n", params->edgeCharge);
 
+  //Print the graph as the adjacency matrix
+  stat = fprintf(svg, "Start Graph:\n");
+  stat = fprintf(svg, "%d\n", g->numNodes); // num Nodes
+  for(int i = 0; i < g->numNodes; i++){
+	  for(int j = 0 ; j < g->numNodes; j++){
+		  stat = fprintf(svg, "%d ", (g->edges[i*g->numNodes + j])?1:0);
+	  }
+	  fprintf(svg, "\n");//end row
+  }
 
   stat = fprintf(svg, "-->\n"); // End comment block (for easy extraction)
 
