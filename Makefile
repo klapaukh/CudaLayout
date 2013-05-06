@@ -1,4 +1,4 @@
-OBJECTS=main.o layout.co graph.o graphmlReader.o
+OBJECTS=main.o layout.co graph.o graphmlReader.o debug.o
 TARGET=layout
 CC=g++
 NVCC=/opt/cuda/bin/nvcc
