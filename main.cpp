@@ -8,11 +8,9 @@
 
 #include <GL/glut.h>
 
-
 #include "graphmlReader.h"
 #include "layout.h"
 #include "debug.h"
-
 
 //GUI stuff
 void display();
@@ -27,7 +25,7 @@ layout_params* glParams = NULL;
 
 void usage() {
 	fprintf(stderr,
-			"Usage: layout [-f filename] [-gui] [-noOuput] [-Ke 500] [-Kh 0.0005] [-Kl -0.05] [-nodeCharge 3] [-edgeCharge 3] [-Kg 0.06] [-mus 0.3] [-muk 0.04] [-i 10000] [-width 1920] [-height 1080] [-t 1] [-nm 1] [-m 1] [-cRest -0.9] [-friction 3] [-spring 1] [-walls 1] [-forces 1]\n");
+			"Usage: layout [-f filename] [-gui] [-noOuput] [-o outfile] [-Ke 500] [-Kh 0.0005] [-Kl -0.05] [-nodeCharge 3] [-edgeCharge 3] [-Kg 0.06] [-mus 0.3] [-muk 0.04] [-i 10000] [-width 1920] [-height 1080] [-t 1] [-nm 1] [-m 1] [-cRest -0.9] [-friction 3] [-spring 1] [-walls 1] [-forces 1]\n");
 	fprintf(stderr, "Forces:\n");
 
 	fprintf(stderr, "\nFriction:\n");
@@ -54,7 +52,7 @@ void usage() {
 int readInt(int argc, char** argv, int i) {
 	if (i >= argc) {
 		fprintf(stderr, "An int was not provided to %s\n", argv[i - 1]);
-		exit (EXIT_FAILURE);
+		exit(EXIT_FAILURE);
 	}
 
 	if (errno != 0) {
@@ -65,20 +63,20 @@ int readInt(int argc, char** argv, int i) {
 	long val = strtol(argv[i], &strend, 10);
 
 	/* Check for various possible errors */
-	if ((errno == ERANGE && (val == LONG_MAX || val == LONG_MIN)) || (errno != 0 && val == 0)) {
-		fprintf(stderr, "An error occured while parsing the argument to %s\n", argv[i - 1]);
-		perror("readInt");
-		exit (EXIT_FAILURE);
-	}
+	if ((errno == ERANGE && (val == LONG_MAX || val == LONG_MIN))|| (errno != 0 && val == 0)){
+	fprintf(stderr, "An error occured while parsing the argument to %s\n", argv[i - 1]);
+	perror("readInt");
+	exit (EXIT_FAILURE);
+}
 
 	if (strend == argv[i]) {
 		fprintf(stderr, "No digits were found for argument %s\n", argv[i - 1]);
-		exit (EXIT_FAILURE);
+		exit(EXIT_FAILURE);
 	}
 
 	if (val > INT_MAX || val < INT_MIN) {
 		fprintf(stderr, "Value given to argument %s outside of integer range", argv[i - 1]);
-		exit (EXIT_FAILURE);
+		exit(EXIT_FAILURE);
 	}
 
 	/* If we got here, strtol() successfully parsed a number */
@@ -92,7 +90,7 @@ int readInt(int argc, char** argv, int i) {
 float readFloat(int argc, char** argv, int i) {
 	if (i >= argc) {
 		fprintf(stderr, "A float was not provided to %s\n", argv[i - 1]);
-		exit (EXIT_FAILURE);
+		exit(EXIT_FAILURE);
 	}
 
 	if (errno != 0) {
@@ -106,12 +104,12 @@ float readFloat(int argc, char** argv, int i) {
 	if ((errno == ERANGE && (val == FLT_MAX || val == FLT_MIN)) || (errno != 0 && val == 0)) {
 		fprintf(stderr, "An error occured while parsing the argument to %s\n", argv[i - 1]);
 		perror("readFloat");
-		exit (EXIT_FAILURE);
+		exit(EXIT_FAILURE);
 	}
 
 	if (strend == argv[i]) {
 		fprintf(stderr, "No digits were found for argument %s\n", argv[i - 1]);
-		exit (EXIT_FAILURE);
+		exit(EXIT_FAILURE);
 	}
 
 	/* If we got here, strtol() successfully parsed a number */
@@ -125,7 +123,7 @@ float readFloat(int argc, char** argv, int i) {
 const char* readString(int argc, char** argv, int i) {
 	if (i >= argc) {
 		fprintf(stderr, "A String was not provided to %s\n", argv[i - 1]);
-		exit (EXIT_FAILURE);
+		exit(EXIT_FAILURE);
 	}
 
 	return argv[i];
@@ -135,6 +133,7 @@ int main(int argc, char** argv) {
 	/*Check arguments to make sure you got a file*/
 	//There must be at least some arguments to get a file
 	const char* filename = NULL;
+	const char* outfile = NULL;
 	bool gui = false;
 	float nodeCharge = 3;
 	bool output = true;
@@ -165,6 +164,8 @@ int main(int argc, char** argv) {
 	for (int i = 1; i < argc; i++) {
 		if (strcmp(argv[i], "-f") == 0) {
 			filename = readString(argc, argv, ++i);
+		} else if (strcmp(argv[i], "-o") == 0) {
+			outfile = readString(argc, argv, ++i);
 		} else if (strcmp(argv[i], "-Ke") == 0) {
 			params->ke = readFloat(argc, argv, ++i);
 		} else if (strcmp(argv[i], "-Kh") == 0) {
@@ -228,7 +229,7 @@ int main(int argc, char** argv) {
 		return EXIT_FAILURE;
 	}
 
-	debug("Reading graph: %s\n",filename);
+	debug("Reading graph: %s\n", filename);
 	graph* g = read(filename);
 	if (g == NULL) {
 		fprintf(stderr, "Creating a graph failed. Terminating\n");
@@ -260,24 +261,26 @@ int main(int argc, char** argv) {
 	 * It is not using the GUI.
 	 * It is possible to lay it out now
 	 */
-	if (output) {
-		graph_toSVG(g, "before.svg", params->width, params->height, (params->forcemode & (BOUNCY_WALLS | CHARGED_WALLS)) != 0,0,params);
-	}
-
-	struct timeval tstart,tend;
+//	if (output) {
+//		graph_toSVG(g, "before.svg", params->width, params->height, (params->forcemode & (BOUNCY_WALLS | CHARGED_WALLS)) != 0,0,params);
+//	}
+	struct timeval tstart, tend;
 	gettimeofday(&tstart, NULL);
 
 	graph_layout(g, params);
 
 	gettimeofday(&tend, NULL);
-	long start = tstart.tv_sec*1000000 + tstart.tv_usec;
-	long end   = tend.tv_sec*1000000 + tend.tv_usec;
+	long start = tstart.tv_sec * 1000000 + tstart.tv_usec;
+	long end = tend.tv_sec * 1000000 + tend.tv_usec;
 	long msElapsed = end - start;
 
 	debug("Elapsed Time (us): %ld\n", msElapsed);
 
+	if (outfile == NULL) {
+		outfile = "after.svg";
+	}
 	if (output) {
-		graph_toSVG(g, "after.svg", params->width, params->height, (params->forcemode & (BOUNCY_WALLS | CHARGED_WALLS)) != 0, msElapsed, params);
+		graph_toSVG(g, outfile, params->width, params->height, (params->forcemode & (BOUNCY_WALLS | CHARGED_WALLS)) != 0, msElapsed, params);
 	}
 	graph_free(g);
 	return EXIT_SUCCESS;
@@ -287,9 +290,9 @@ int main(int argc, char** argv) {
 void display() {
 	glClearColor(1, 1, 1, 1);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	glEnable (GL_DEPTH_TEST);
-	glEnable (GL_LIGHTING);
-	glEnable (GL_COLOR_MATERIAL);
+	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_LIGHTING);
+	glEnable(GL_COLOR_MATERIAL);
 
 	glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE);
 
@@ -311,15 +314,15 @@ void display() {
 				maxy = n->y + n->height / 2;
 			}
 		}
-		glMatrixMode (GL_PROJECTION);
+		glMatrixMode(GL_PROJECTION);
 		glLoadIdentity();
 		gluOrtho2D(minx, maxx, maxy, miny);
-		glMatrixMode (GL_MODELVIEW);
+		glMatrixMode(GL_MODELVIEW);
 
 	}
 
 	//draw edges
-	glBegin (GL_LINES);
+	glBegin(GL_LINES);
 	glColor3f(1.0f, 0.0f, 0.0f); /* set object color as red */
 
 	for (int i = 0; i < glGraph->numNodes; i++) {
@@ -337,7 +340,7 @@ void display() {
 	glEnd();
 
 	//draw Nodes
-	glBegin (GL_QUADS);
+	glBegin(GL_QUADS);
 	glColor3f(0.0, 0, 1.0);
 
 	for (int i = 0; i < glGraph->numNodes; i++) {
@@ -384,13 +387,13 @@ void setLight() {
 	glLightfv(GL_LIGHT0, GL_DIFFUSE, diffintensity);
 	glLightfv(GL_LIGHT0, GL_AMBIENT, ambient);
 
-	glEnable (GL_LIGHT0);
+	glEnable(GL_LIGHT0);
 }
 
 void initCamera(int width, int height) {
-	glMatrixMode (GL_PROJECTION);
+	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
 	gluOrtho2D(0, width, height, 0);
-	glMatrixMode (GL_MODELVIEW);
+	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
 }
