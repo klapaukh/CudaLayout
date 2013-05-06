@@ -96,8 +96,8 @@ __global__ void layout(node* nodes, unsigned char* edges, int numNodes, layout_p
 						for (int end = 0; end < numNodes; end++) {
 							if (edges[me + end * numNodes]) {
 								//There is an edge between me and them!
-								float edge2x = (nodes[me].x + nodes[end].x) / 2.0;
-								float edge2y = (nodes[me].y + nodes[end].y) / 2.0;
+								float edge2x = (nodes[me].x + nodes[end].x) / 2.0f;
+								float edge2y = (nodes[me].y + nodes[end].y) / 2.0f;
 
 								dx = edge2x - edgex;
 								dy = edge2y - edgey;
