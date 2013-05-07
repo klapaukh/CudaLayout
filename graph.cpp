@@ -125,6 +125,7 @@ void graph_toSVG(graph* g, const char* filename, int screenwidth, int screenheig
   stat = fprintf(svg, "Start Graph:\n");
   stat = fprintf(svg, "%d\n", g->numNodes); // num Nodes
   for(int i = 0; i < g->numNodes; i++){
+	  stat = fprintf(svg, "%0.2f %0.2f ", g->nodes[i].x, g->nodes[i].y);
 	  for(int j = 0 ; j < g->numNodes; j++){
 		  stat = fprintf(svg, "%d ", (g->edges[i*g->numNodes + j])?1:0);
 	  }
