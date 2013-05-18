@@ -121,6 +121,8 @@ void graph_toSVG(graph* g, const char* filename, int screenwidth, int screenheig
   stat = fprintf(svg, "wellMass: %f\n", params->wellMass);
   stat = fprintf(svg, "edgeCharge: %f\n", params->edgeCharge);
 
+  stat = fprintf(svg, "--\n"); // Begin comment block (for easy extraction)
+
   //Print the graph as the adjacency matrix
   stat = fprintf(svg, "Start Graph:\n");
   stat = fprintf(svg, "%d\n", g->numNodes); // num Nodes
