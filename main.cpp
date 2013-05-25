@@ -25,7 +25,7 @@ layout_params* glParams = NULL;
 
 void usage() {
 	fprintf(stderr,
-			"Usage: layout [-f filename] [-gui] [-noOuput] [-o outfile] [-Ke 500] [-Kh 0.0005] [-Kl -0.05] [-nodeCharge 3] [-edgeCharge 3] [-Kg 0.06] [-mus 0.3] [-muk 0.04] [-i 10000] [-width 1920] [-height 1080] [-t 1] [-nm 1] [-m 1] [-cRest -0.9] [-friction 3] [-spring 1] [-walls 1] [-forces 1]\n");
+			"Usage: layout [-f filename] [-gui] [-cpuLoop] [-noOuput] [-o outfile] [-Ke 500] [-Kh 0.0005] [-Kl -0.05] [-nodeCharge 3] [-edgeCharge 3] [-Kg 0.06] [-mus 0.3] [-muk 0.04] [-i 10000] [-width 1920] [-height 1080] [-t 1] [-nm 1] [-m 1] [-cRest -0.9] [-friction 3] [-spring 1] [-walls 1] [-forces 1]\n");
 	fprintf(stderr, "Forces:\n");
 
 	fprintf(stderr, "\nFriction:\n");
@@ -155,6 +155,7 @@ int main(int argc, char** argv) {
 	params->wellMass = 1;
 	params->edgeCharge = nodeCharge;
 	params->forcemode = COULOMBS_LAW | HOOKES_LAW_SPRING | FRICTION | DRAG | BOUNCY_WALLS;
+	params->cpuLoop = false;
 
 	if (argc < 2) {
 		usage();
@@ -192,6 +193,8 @@ int main(int argc, char** argv) {
 			params->height = readInt(argc, argv, ++i);
 		} else if (strcmp(argv[i], "-gui") == 0) {
 			gui = true;
+		} else if (strcmp(argv[i], "-cpuLoop") == 0) {
+			params->cpuLoop = true;
 		} else if (strcmp(argv[i], "-noOutput") == 0) {
 			output = false;
 		} else if (strcmp(argv[i], "-t") == 0) {
