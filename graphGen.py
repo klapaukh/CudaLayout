@@ -31,7 +31,7 @@ def grid(n):
 def binaryTree(n):
     for i in range(n): 
         print(' <node id="n{0}" />'.format(i))
-        parent = math.floor((i-1)/2)
+        parent = int(math.floor((i-1)/2))
         if parent >=0:
             print(' <edge id="e{0}--{1}" source="n{0}" target="n{1}" />'.format(i,parent))
 
@@ -48,7 +48,7 @@ if len(sys.argv) > 1:
         gen = binaryTree
     elif sys.argv[1] == '-bf':
         gen = binaryTree
-        nnodes = pow(2,nnodes+1) - 1
+        nnodes = int(pow(2,nnodes+1) - 1)
 print('<?xml version="1.0"?>')
 print('<graphml>')
 print(' <graph id="g">')
