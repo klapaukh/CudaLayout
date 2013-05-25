@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <cuda.h>
 
 #include "layout.h"
 
@@ -244,11 +245,13 @@ __global__ void layout(node* nodes, unsigned char* edges, int numNodes, layout_p
 		}
 
 		//Actually update the position of the nodes.
-		//Having the sychnornised program counter ensures that this doesn't clash with any reads
+
 		nodes[me].x = nodes[me].nextX;
 		nodes[me].y = nodes[me].nextY;
 		nodes[me].dx = nodes[me].nextdx;
 		nodes[me].dy = nodes[me].nextdy;
+		__threadfence();
+		__syncthreads();
 	}
 }
 
@@ -298,10 +301,20 @@ void graph_layout(graph* g, layout_params* params) {
 	/*COMPUTE*/
 	int nth = 8;
 	int nbl = ceil(g->numNodes / 8.0);
-	//printf("Graph has %d nodes with %d blocks and %d threads\n", g->numNodes, nbl, nth);
-	layout<<<nbl,nth>>>(nodes_device, edges_device, g->numNodes,params_device);
 
-	/*After computation you must copy the results back*/
+	if (params->cpuLoop) {
+		for (int i = 0; i < params->iterations; i++) {
+//		layout<<<nbl,nth>>>(nodes_device, edges_device, g->numNodes,params_device);
+			layout<<<1,g->numNodes>>>(nodes_device, edges_device, g->numNodes,params_device);
+		}
+	} else {
+//		layout<<<nbl,nth>>>(nodes_device, edges_device, g->numNodes,params_device);
+		layout<<<1,g->numNodes>>>(nodes_device, edges_device, g->numNodes,params_device);
+	}
+
+//	cudaDeviceSychronize();
+
+/*After computation you must copy the results back*/
 	err = cudaMemcpy(g->nodes, nodes_device, sizeof(node) * g->numNodes, cudaMemcpyDeviceToHost);
 	if (err != cudaSuccess) {
 		printf("Error return from cudaMemcpy nodes to device\n");
