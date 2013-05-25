@@ -304,8 +304,8 @@ void graph_layout(graph* g, layout_params* params) {
 
 	if (params->cpuLoop) {
 		for (int i = 0; i < params->iterations; i++) {
-//		layout<<<nbl,nth>>>(nodes_device, edges_device, g->numNodes,params_device);
-			layout<<<1,g->numNodes>>>(nodes_device, edges_device, g->numNodes,params_device);
+			layout<<<nbl,nth>>>(nodes_device, edges_device, g->numNodes,params_device);
+//			layout<<<1,g->numNodes>>>(nodes_device, edges_device, g->numNodes,params_device);
 		}
 	} else {
 //		layout<<<nbl,nth>>>(nodes_device, edges_device, g->numNodes,params_device);
