@@ -4,7 +4,7 @@ CC=g++
 NVCC=/opt/cuda/bin/nvcc
 CFLAGS=-pedantic -Wall -Wextra -lint -I/opt/cuda/include
 LDFLAGS=-Xlinker -rpath /opt/cuda/lib64 -L/opt/cuda/lib64 -lcudart -lexpat -lGL -lGLU -lglut
-NCFLAGS=-m64 -I/opt/cuda/include
+NCFLAGS=-m64 -I/opt/cuda/include -gencode arch=compute_20,code=sm_20 -gencode arch=compute_20,code=sm_21
 
 all: $(TARGET)
 
