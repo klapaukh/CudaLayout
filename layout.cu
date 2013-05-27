@@ -1,10 +1,14 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <cuda.h>
+#include <math.h>
+
+#include <cuda_runtime.h>
+#include <math_functions.h>
 
 #include "layout.h"
 
-__global__ void layout(node* nodes, unsigned char* edges, int numNodes, layout_params* params) {
+__global__ void layout(node* nodes, unsigned char* edges, int numNodes,
+		layout_params* params) {
 	int me = blockIdx.x * 8 + threadIdx.x;
 	int forcemode = params->forcemode;
 
@@ -12,6 +16,15 @@ __global__ void layout(node* nodes, unsigned char* edges, int numNodes, layout_p
 		return;
 	}
 	float fx, fy;
+
+	if (((forcemode & (CHARGED_WALLS | BOUNCY_WALLS)) == 0) && me == 0) {
+		//Keep the graph centered if there are no walls
+		nodes[me].x = 0;
+		nodes[me].y = 0;
+		nodes[me].dx = 0;
+		nodes[me].dy = 0;
+		return;
+	}
 	for (int z = 0; z < params->iterations; z++) {
 		fx = fy = 0;
 
@@ -46,14 +59,18 @@ __global__ void layout(node* nodes, unsigned char* edges, int numNodes, layout_p
 					//Attractive spring force
 					float naturalWidth = nodes[i].width + nodes[me].width;
 					float naturalHeight = nodes[i].height + nodes[me].height;
-					float naturalLength = sqrt(naturalWidth * naturalWidth + naturalHeight * naturalHeight);
+					float naturalLength = sqrt(
+							naturalWidth * naturalWidth
+									+ naturalHeight * naturalHeight);
 					float springF = -(params->kh) * (abs(dist) - naturalLength);
 					fx += springF * dx / dist;
 					fy += springF * dy / dist;
 				} else if ((forcemode & LOG_SPRING) != 0) {
 					float naturalWidth = nodes[i].width + nodes[me].width;
 					float naturalHeight = nodes[i].height + nodes[me].height;
-					float naturalLength = sqrt(naturalWidth * naturalWidth + naturalHeight * naturalHeight);
+					float naturalLength = sqrt(
+							naturalWidth * naturalWidth
+									+ naturalHeight * naturalHeight);
 					float springF = (params->kl) * log(dist / naturalLength);
 					fx += springF * dx / dist;
 					fy += springF * dy / dist;
@@ -97,8 +114,10 @@ __global__ void layout(node* nodes, unsigned char* edges, int numNodes, layout_p
 						for (int end = 0; end < numNodes; end++) {
 							if (edges[me + end * numNodes]) {
 								//There is an edge between me and them!
-								float edge2x = (nodes[me].x + nodes[end].x) / 2.0f;
-								float edge2y = (nodes[me].y + nodes[end].y) / 2.0f;
+								float edge2x = (nodes[me].x + nodes[end].x)
+										/ 2.0f;
+								float edge2y = (nodes[me].y + nodes[end].y)
+										/ 2.0f;
 
 								dx = edge2x - edgex;
 								dy = edge2y - edgey;
@@ -108,7 +127,8 @@ __global__ void layout(node* nodes, unsigned char* edges, int numNodes, layout_p
 									dist = 1;
 								}
 
-								float f = (params->ke) * q1 * q2 / (dist * dist * dist);
+								float f = (params->ke) * q1 * q2
+										/ (dist * dist * dist);
 								if (isfinite(f)) {
 									fx += dx * f;
 									fy += dy * f;
@@ -129,8 +149,10 @@ __global__ void layout(node* nodes, unsigned char* edges, int numNodes, layout_p
 			float charge = (params->ke) * (params->kw) * nodes[me].charge;
 			float forcexl = charge / ((x - 1) * (x - 1));
 			float forceyt = charge / ((y - 1) * (y - 1));
-			float forcexr = -charge / (((params->width) + 1 - x) * (params->width + 1 - x));
-			float forceyb = -charge / ((params->height + 1 - y) * (params->height + 1 - y));
+			float forcexr = -charge
+					/ (((params->width) + 1 - x) * (params->width + 1 - x));
+			float forceyb = -charge
+					/ ((params->height + 1 - y) * (params->height + 1 - y));
 			fx += forcexl + forcexr;
 			fy += forceyb + forceyt;
 		}
@@ -144,7 +166,8 @@ __global__ void layout(node* nodes, unsigned char* edges, int numNodes, layout_p
 				dist = 100;
 			}
 			// float gravForce = params->kg * params->mass * params->wellMass / (dist*dist);
-			float gravForce = params->ke * nodes[me].charge * params->wellMass / (dist * dist);
+			float gravForce = params->ke * nodes[me].charge * params->wellMass
+					/ (dist * dist);
 			fx = gravForce * dx / dist;
 			fy = gravForce * dy / dist;
 		}
@@ -160,7 +183,8 @@ __global__ void layout(node* nodes, unsigned char* edges, int numNodes, layout_p
 			if (nodes[me].dx == 0 && nodes[me].dy == 0) {
 				//I am stationary
 				float fFric = params->mus * params->mass * g;
-				if (abs(fFric * normx) >= abs(fx) && abs(fFric * normx) >= abs(fy)) {
+				if (abs(fFric * normx) >= abs(fx)
+						&& abs(fFric * normx) >= abs(fy)) {
 					fx = fy = 0;
 				} else {
 					//Just ignore friction this tick -- only really happens once
@@ -188,22 +212,20 @@ __global__ void layout(node* nodes, unsigned char* edges, int numNodes, layout_p
 		float ax = fx / params->mass;
 		float ay = fy / params->mass;
 
-		if ((forcemode & (CHARGED_WALLS | BOUNCY_WALLS)) != 0) {
-			if (ax > params->width / 3) {
-				ax = params->width / 3;
-			} else if (ax < -(params->width) / 3) {
-				ax = -(params->width) / 3;
-			} else if (!isfinite(ax)) {
-				ax = 0;
-			}
+		if (!isfinite(ax)) {
+			ax = 0;
+		} else if (ax > params->width / 3) {
+			ax = params->width / 3;
+		} else if (ax < -(params->width) / 3) {
+			ax = -(params->width) / 3;
+		}
 
-			if (ay > params->height / 3) {
-				ay = params->height / 3;
-			} else if (ay < -(params->height) / 3) {
-				ay = -(params->height) / 3;
-			} else if (!isfinite(ay)) {
-				ay = 0;
-			}
+		if (!isfinite(ay)) {
+			ay = 0;
+		} else if (ay > params->height / 3) {
+			ay = params->height / 3;
+		} else if (ay < -(params->height) / 3) {
+			ay = -(params->height) / 3;
 		}
 
 		nodes[me].nextX = nodes[me].x + nodes[me].dx * params->time;
@@ -211,6 +233,7 @@ __global__ void layout(node* nodes, unsigned char* edges, int numNodes, layout_p
 		nodes[me].nextdy = nodes[me].dy + ay * params->time;
 		nodes[me].nextdx = nodes[me].dx + ax * params->time;
 
+		//This part creates NaN values when it doesn't even get run!
 		if ((forcemode & (CHARGED_WALLS | BOUNCY_WALLS)) != 0) {
 			//Make sure it won't be travelling too fast
 			if (nodes[me].nextdx * params->time > params->width / 2) {
@@ -221,14 +244,16 @@ __global__ void layout(node* nodes, unsigned char* edges, int numNodes, layout_p
 
 			if (nodes[me].nextdy * params->time > params->height / 2) {
 				nodes[me].nextdy = params->height / (2 * params->time);
-			} else if (nodes[me].nextdy * params->time < -(params->height) / 2) {
+			} else if (nodes[me].nextdy * params->time
+					< -(params->height) / 2) {
 				nodes[me].nextdy = -(params->height) / (2 * params->time);
 			}
 
 			//But wait - There are bounds to check!
 			float collided = params->coefficientOfRestitution; //coeeficient of restitution
 			if (nodes[me].nextX + nodes[me].width / 2 > params->width) {
-				nodes[me].nextX = 2 * params->width - nodes[me].nextX - nodes[me].width;
+				nodes[me].nextX = 2 * params->width - nodes[me].nextX
+						- nodes[me].width;
 				nodes[me].nextdx *= collided;
 			} else if (nodes[me].nextX < nodes[me].width / 2) {
 				nodes[me].nextX = nodes[me].width - nodes[me].nextX;
@@ -236,7 +261,8 @@ __global__ void layout(node* nodes, unsigned char* edges, int numNodes, layout_p
 			}
 
 			if (nodes[me].nextY + nodes[me].height / 2 > params->height) {
-				nodes[me].nextY = 2 * params->height - nodes[me].nextY - nodes[me].height;
+				nodes[me].nextY = 2 * params->height - nodes[me].nextY
+						- nodes[me].height;
 				nodes[me].nextdy *= collided;
 			} else if (nodes[me].nextY < nodes[me].height / 2) {
 				nodes[me].nextY = nodes[me].height - nodes[me].nextY;
@@ -245,11 +271,14 @@ __global__ void layout(node* nodes, unsigned char* edges, int numNodes, layout_p
 		}
 
 		//Actually update the position of the nodes.
-
 		nodes[me].x = nodes[me].nextX;
 		nodes[me].y = nodes[me].nextY;
 		nodes[me].dx = nodes[me].nextdx;
 		nodes[me].dy = nodes[me].nextdy;
+
+		if (params->cpuLoop) {
+			return;
+		}
 		__threadfence();
 		__syncthreads();
 	}
@@ -264,7 +293,8 @@ void graph_layout(graph* g, layout_params* params) {
 	cudaError_t err;
 	layout_params* params_device;
 
-	err = cudaMalloc(&edges_device, sizeof(unsigned char) * g->numNodes * g->numNodes);
+	err = cudaMalloc(&edges_device,
+			sizeof(unsigned char) * g->numNodes * g->numNodes);
 	if (err != cudaSuccess) {
 		printf("Memory allocation for edges failed on GPU\n");
 		return;
@@ -283,17 +313,21 @@ void graph_layout(graph* g, layout_params* params) {
 	}
 
 	/* copy data to device */
-	err = cudaMemcpy(edges_device, g->edges, sizeof(unsigned char) * g->numNodes * g->numNodes, cudaMemcpyHostToDevice);
+	err = cudaMemcpy(edges_device, g->edges,
+			sizeof(unsigned char) * g->numNodes * g->numNodes,
+			cudaMemcpyHostToDevice);
 	if (err != cudaSuccess) {
 		printf("Error return from cudaMemcpy edges to device\n");
 	}
 
-	err = cudaMemcpy(nodes_device, g->nodes, sizeof(node) * g->numNodes, cudaMemcpyHostToDevice);
+	err = cudaMemcpy(nodes_device, g->nodes, sizeof(node) * g->numNodes,
+			cudaMemcpyHostToDevice);
 	if (err != cudaSuccess) {
 		printf("Error return from cudaMemcpy nodes to device\n");
 	}
 
-	err = cudaMemcpy(params_device, params, sizeof(layout_params), cudaMemcpyHostToDevice);
+	err = cudaMemcpy(params_device, params, sizeof(layout_params),
+			cudaMemcpyHostToDevice);
 	if (err != cudaSuccess) {
 		printf("Error return from cudaMemcpy params to device\n");
 	}
@@ -304,18 +338,19 @@ void graph_layout(graph* g, layout_params* params) {
 
 	if (params->cpuLoop) {
 		for (int i = 0; i < params->iterations; i++) {
-			layout<<<nbl,nth>>>(nodes_device, edges_device, g->numNodes,params_device);
+			layout<<<nbl, nth>>>(nodes_device, edges_device, g->numNodes,
+					params_device);
 //			layout<<<1,g->numNodes>>>(nodes_device, edges_device, g->numNodes,params_device);
 		}
 	} else {
 //		layout<<<nbl,nth>>>(nodes_device, edges_device, g->numNodes,params_device);
-		layout<<<1,g->numNodes>>>(nodes_device, edges_device, g->numNodes,params_device);
+		layout<<<1, g->numNodes>>>(nodes_device, edges_device, g->numNodes,
+				params_device);
 	}
 
-//	cudaDeviceSychronize();
-
-/*After computation you must copy the results back*/
-	err = cudaMemcpy(g->nodes, nodes_device, sizeof(node) * g->numNodes, cudaMemcpyDeviceToHost);
+	/*After computation you must copy the results back*/
+	err = cudaMemcpy(g->nodes, nodes_device, sizeof(node) * g->numNodes,
+			cudaMemcpyDeviceToHost);
 	if (err != cudaSuccess) {
 		printf("Error return from cudaMemcpy nodes to device\n");
 	}
