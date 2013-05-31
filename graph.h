@@ -35,7 +35,7 @@ typedef struct graph{
 
 graph* graph_create(void);
 void graph_free(graph*);
-void graph_toSVG(graph*, const char*, int, int, bool,long time, layout_params* params);
+void graph_toSVG(graph*, const char* outfile, int, int, bool,long time, layout_params* params,const char* graphfile);
 void graph_initRandom(graph*, int, int, int, int, float);
 
 

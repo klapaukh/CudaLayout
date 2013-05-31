@@ -283,7 +283,7 @@ int main(int argc, char** argv) {
 		outfile = "after.svg";
 	}
 	if (output) {
-		graph_toSVG(g, outfile, params->width, params->height, (params->forcemode & (BOUNCY_WALLS | CHARGED_WALLS)) != 0, msElapsed, params);
+		graph_toSVG(g, outfile, params->width, params->height, (params->forcemode & (BOUNCY_WALLS | CHARGED_WALLS)) != 0, msElapsed, params,filename);
 	}
 	graph_free(g);
 	return EXIT_SUCCESS;

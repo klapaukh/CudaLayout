@@ -73,7 +73,7 @@ void graph_initRandom(graph* g, int width, int height, int screenWidth,
 }
 
 void graph_toSVG(graph* g, const char* filename, int screenwidth,
-		int screenheight, bool hasWalls, long time, layout_params* params) {
+		int screenheight, bool hasWalls, long time, layout_params* params, const char* graphfile) {
 	FILE* svg = fopen(filename, "w");
 	if (svg == NULL) {
 		printf("Failed to create file %s.\n", filename);
@@ -126,6 +126,8 @@ void graph_toSVG(graph* g, const char* filename, int screenwidth,
 
 	stat = fprintf(svg, "<!--\n"); // Begin comment block (for easy extraction)
 	stat = fprintf(svg, "elapsed: %ld\n", time);
+	stat = fprintf(svg, "filename: %s\n", graphfile);
+
 
 	//Print the program arguments
 	stat = fprintf(svg, "width: %d\n", params->width);
