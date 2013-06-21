@@ -9,7 +9,7 @@
 
 //MAX_LEN is such that the index will fit into a 8 bits
 #define BUFF_SIZE 1024
-#define MAX_LEN 200
+#define MAX_LEN 500
 #define ID_LEN 6
 
 void startTag(void*, const char*, const char**);
@@ -40,7 +40,7 @@ void startTag(void* data, const char* element, const char** attributes){
     for(int i=0; attributes[i] != NULL; i+=2){
       if(strcmp(attributes[i],"id") == 0){
 	if(graph->numNode >= MAX_LEN){
-	  printf("Too many nodes in file. Greater than MAX_LEN (%d)\n", MAX_LEN);
+	  printf("Too many nodes in file (%d). Greater than MAX_LEN (%d)\n",graph->numNode, MAX_LEN);
 	  return;
 	}
 	//printf("Node: %s\n", attributes[i+1]);
@@ -50,7 +50,7 @@ void startTag(void* data, const char* element, const char** attributes){
     }
   }else if(strcmp(element, "edge") == 0){
     if(graph->numEdge >= MAX_LEN){
-      printf("Too many edges in file. Greater than MAX_LEN (%d)\n", MAX_LEN);
+      printf("Too many edges in file (%d). Greater than MAX_LEN (%d)\n",graph->numEdge, MAX_LEN);
       return;
     }
     for(int i=0; attributes[i] != NULL; i+=2){
