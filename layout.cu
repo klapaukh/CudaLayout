@@ -7,6 +7,17 @@
 
 #include "layout.h"
 
+__device__ float computeKineticEnergy(node* nodes, int numNodes, float mass) {
+	float totalEk = 0;
+	for (int i = 0; i < numNodes; i++) {
+		//0.5*m*v^2
+		float speed = nodes[i].dx * nodes[i].dx + nodes[i].dy * nodes[i].dy;
+		speed = sqrt(speed);
+		totalEk += 0.5 * mass * speed * speed;
+	}
+	return totalEk;
+}
+
 __global__ void layout(node* nodes, unsigned char* edges, int numNodes,
 		layout_params* params) {
 	int me = blockIdx.x * 8 + threadIdx.x;
@@ -19,8 +30,8 @@ __global__ void layout(node* nodes, unsigned char* edges, int numNodes,
 
 	if (((forcemode & (CHARGED_WALLS | BOUNCY_WALLS)) == 0) && me == 0) {
 		//Keep the graph centered if there are no walls
-		nodes[me].x = 0;
-		nodes[me].y = 0;
+		nodes[me].x = params->width / 2;
+		nodes[me].y = params->height / 2;
 		nodes[me].dx = 0;
 		nodes[me].dy = 0;
 		return;
@@ -276,11 +287,20 @@ __global__ void layout(node* nodes, unsigned char* edges, int numNodes,
 		nodes[me].dx = nodes[me].nextdx;
 		nodes[me].dy = nodes[me].nextdy;
 
-		if (params->cpuLoop) {
-			return;
-		}
 		__threadfence();
 		__syncthreads();
+
+		if (params->cpuLoop) {
+			if (me == 1) {
+				params->finalKinectEnergy = computeKineticEnergy(nodes,
+						numNodes, params->mass);
+			}
+			return;
+		}
+	}
+	if (me == 1) {
+		params->finalKinectEnergy = computeKineticEnergy(nodes, numNodes,
+				params->mass);
 	}
 }
 
@@ -352,7 +372,14 @@ void graph_layout(graph* g, layout_params* params) {
 	err = cudaMemcpy(g->nodes, nodes_device, sizeof(node) * g->numNodes,
 			cudaMemcpyDeviceToHost);
 	if (err != cudaSuccess) {
-		printf("Error return from cudaMemcpy nodes to device\n");
+		printf("Error return from cudaMemcpy nodes to host\n");
+	}
+
+	/*After computation you must copy the results back*/
+	err = cudaMemcpy(params, params_device, sizeof(layout_params),
+			cudaMemcpyDeviceToHost);
+	if (err != cudaSuccess) {
+		printf("Error return from cudaMemcpy layout_params to host\n");
 	}
 
 	/*
