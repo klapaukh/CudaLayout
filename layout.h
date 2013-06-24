@@ -4,21 +4,6 @@
 #include "graph.h"
 #include "common.h"
 
-/**
-Graph layout takes a graph
-width of plane
-height of plane
-number of interations
-ke
-kh
-mass
-time
-forceMode
- */
-
-
-
-
 void graph_layout(graph* g, layout_params* params);
 
 //Force Modes
