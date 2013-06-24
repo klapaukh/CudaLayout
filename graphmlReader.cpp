@@ -135,6 +135,11 @@ graph* read(const char* filename){
   g->nodes = (node*)malloc(sizeof(node) * data.numNode);
   g->edges = (unsigned char*)malloc(sizeof(unsigned char)*data.numNode * data.numNode);
 
+  if(g->numNodes < 2){
+	  printf("Not enough nodes in graph (%d < 2)", g->numNodes);
+	  return NULL;
+  }
+
   int i;
   g->edgeLabels[0] = (char*)malloc(sizeof(char));
   *(g->edgeLabels[0]) = '\0';
