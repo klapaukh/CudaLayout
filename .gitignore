@@ -17,4 +17,6 @@ temp.graphml
 .settings/
 Debug/
 grid10.graphml
-
+line.svg
+star.svg
+triangle.svg
