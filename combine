@@ -1,0 +1,22 @@
+#!/bin/bash
+
+datadir=/local/scratch/temp/data
+outfile=/local/scratch/temp/data/outfile.csv
+
+count=0
+for dir in $(ls $datadir)
+do
+	for file in $(ls $datadir/$dir | grep "out$")
+	do
+		if [[ $count == 0 ]]
+		then
+			cat ${datadir}/${dir}/${file} >> $outfile
+			count=$(($count + 1))
+		else
+			tail -n 1 ${datadir}/${dir}/${file} >> $outfile
+		fi
+	done
+done
+
+
+
