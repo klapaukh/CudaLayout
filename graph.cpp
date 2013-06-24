@@ -148,6 +148,10 @@ void graph_toSVG(graph* g, const char* filename, int screenwidth,
 	stat = fprintf(svg, "wellMass: %f\n", params->wellMass);
 	stat = fprintf(svg, "edgeCharge: %f\n", params->edgeCharge);
 	stat = fprintf(svg, "finalKineticEnergy: %f\n", params->finalKinectEnergy);
+	stat = fprintf(svg, "nodeWidth: %f\n", g->nodes[0].width);
+	stat = fprintf(svg, "nodeHeight: %f\n", g->nodes[0].height);
+	stat = fprintf(svg, "nodeCharge: %f\n", g->nodes[0].charge);
+
 
 	stat = fprintf(svg, "-\n"); // Begin comment block (for easy extraction)
 
