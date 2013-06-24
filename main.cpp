@@ -156,6 +156,7 @@ int main(int argc, char** argv) {
 	params->edgeCharge = nodeCharge;
 	params->forcemode = COULOMBS_LAW | HOOKES_LAW_SPRING | FRICTION | DRAG | BOUNCY_WALLS;
 	params->cpuLoop = false;
+	params->finalKinectEnergy = -1;
 
 	if (argc < 2) {
 		usage();
