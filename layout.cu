@@ -6,6 +6,9 @@
 #include <math_functions.h>
 
 #include "layout.h"
+#include "debug.h"
+
+void handleError(cudaError_t, const char*);
 
 __device__ float computeKineticEnergy(node* nodes, int numNodes, float mass) {
 	float totalEk = 0;
@@ -313,44 +316,53 @@ void graph_layout(graph* g, layout_params* params) {
 	cudaError_t err;
 	layout_params* params_device;
 
+#ifdef DEBUG
+	cudaDeviceProp prop;
+	int numDevices = -1;
+
+	err = cudaGetDeviceCount(&numDevices);
+	handleError(err, "Getting number of devices");
+
+	printf("Found %d devices\n", numDevices);
+	if (numDevices < 1) {
+		exit(-1);
+	}
+
+	err = cudaGetDeviceProperties(&prop, 0);
+	handleError(err,"Getting device properties");
+
+	printf("Kernel time out enabled: %s\n", prop.kernelExecTimeoutEnabled?"true":"false");
+#endif
+
+	err = cudaDeviceReset();
+	handleError(err, "Device Reset");
+
+	err = cudaDeviceSynchronize();
+	handleError(err, "Waiting for device reset finish");
+
 	err = cudaMalloc(&edges_device,
 			sizeof(unsigned char) * g->numNodes * g->numNodes);
-	if (err != cudaSuccess) {
-		printf("Memory allocation for edges failed on GPU\n");
-		return;
-	}
+	handleError(err, "Allocating GPU memory for edges");
 
 	err = cudaMalloc(&nodes_device, sizeof(node) * g->numNodes);
-	if (err != cudaSuccess) {
-		printf("Memory allocation for nodes failed on GPU\n");
-		return;
-	}
+	handleError(err, "Allocating GPU memory for nodes");
 
 	err = cudaMalloc(&params_device, sizeof(layout_params));
-	if (err != cudaSuccess) {
-		printf("Memory allocation for params failed on GPU\n");
-		return;
-	}
+	handleError(err, "Allocating GPU memory for params");
 
 	/* copy data to device */
 	err = cudaMemcpy(edges_device, g->edges,
 			sizeof(unsigned char) * g->numNodes * g->numNodes,
 			cudaMemcpyHostToDevice);
-	if (err != cudaSuccess) {
-		printf("Error return from cudaMemcpy edges to device\n");
-	}
+	handleError(err, "cudaMemcpy edges to device");
 
 	err = cudaMemcpy(nodes_device, g->nodes, sizeof(node) * g->numNodes,
 			cudaMemcpyHostToDevice);
-	if (err != cudaSuccess) {
-		printf("Error return from cudaMemcpy nodes to device\n");
-	}
+	handleError(err, " cudaMemcpy nodes to device");
 
 	err = cudaMemcpy(params_device, params, sizeof(layout_params),
 			cudaMemcpyHostToDevice);
-	if (err != cudaSuccess) {
-		printf("Error return from cudaMemcpy params to device\n");
-	}
+	handleError(err, "cudaMemcpy layout_params to device");
 
 	/*COMPUTE*/
 	int nth = 8;
@@ -368,36 +380,42 @@ void graph_layout(graph* g, layout_params* params) {
 				params_device);
 	}
 
+	err = cudaDeviceSynchronize();
+	handleError(err, "Waiting for layout to finish");
+
 	/*After computation you must copy the results back*/
 	err = cudaMemcpy(g->nodes, nodes_device, sizeof(node) * g->numNodes,
 			cudaMemcpyDeviceToHost);
 	if (err != cudaSuccess) {
-		printf("Error return from cudaMemcpy nodes to host\n");
+		handleError(err, "cudaMemcpy nodes to host");
 	}
 
 	/*After computation you must copy the results back*/
 	err = cudaMemcpy(params, params_device, sizeof(layout_params),
 			cudaMemcpyDeviceToHost);
-	if (err != cudaSuccess) {
-		printf("Error return from cudaMemcpy layout_params to host\n");
-	}
+	handleError(err, "cudaMemcpy layout_params to host");
 
 	/*
 	 All finished, free the memory now
 	 */
 	err = cudaFree(nodes_device);
-	if (err != cudaSuccess) {
-		printf("Freeing nodes failed\n");
-	}
+	handleError(err, "cudaFree nodes");
 
 	err = cudaFree(edges_device);
-	if (err != cudaSuccess) {
-		printf("Freeing edges failed\n");
-	}
+	handleError(err, "cudaFree edges");
 
 	err = cudaFree(params_device);
-	if (err != cudaSuccess) {
-		printf("Freeing params failed\n");
+	handleError(err, "cudaFree layout_params");
+
+	err = cudaDeviceSynchronize();
+	handleError(err, "Waiting for all tasks to finish");
+}
+
+void handleError(cudaError_t error, const char* context) {
+	if (error != cudaSuccess) {
+		printf("Cuda error occurred in: %s\n", context);
+		printf("--%s\n", cudaGetErrorString(error));
+		exit(-1);
 	}
 }
 
