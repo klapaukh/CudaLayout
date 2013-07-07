@@ -4,7 +4,7 @@
 #include "graph.h"
 #include "common.h"
 
-void graph_layout(graph* g, layout_params* params);
+void graph_layout(graph** g, int numGraphs, layout_params* params);
 
 //Force Modes
 #define HOOKES_LAW_SPRING 1 << 0

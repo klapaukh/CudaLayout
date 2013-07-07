@@ -3,6 +3,7 @@
 
 #include "graph.h"
 
-graph* read(const char*);
+graph* readFile(const char*);
+graph** readDir(const char*, int*);
 
 #endif

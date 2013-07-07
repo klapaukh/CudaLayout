@@ -3,12 +3,23 @@
 #include <time.h>
 #include <float.h>
 #include <math.h>
+#include <errno.h>
+#include <sys/stat.h>
+#include <string.h>
 
 #include "graph.h"
+
+FILE* ensureFile(const char* filename);
 
 graph* graph_create(void) {
 	/*Set up an empty graph*/
 	graph* g = (graph*) malloc(sizeof(graph));
+	if(g == NULL){
+		fprintf(stderr, "No memory to allocated graph\n");
+		return NULL;
+	}
+	g->dir = NULL;
+	g->filename = NULL;
 	g->nodeLabels = NULL;
 	g->edgeLabels = NULL;
 	g->nodes = NULL;
@@ -17,6 +28,7 @@ graph* graph_create(void) {
 	g->numEdgeLabels = 0;
 	g->numEdges = 0;
 	g->numNodes = 0;
+	g->finalEK = -1;
 
 	return g;
 }
@@ -36,11 +48,18 @@ void graph_free(graph* g) {
 		}
 		free(g->edgeLabels);
 	}
-	if (g->edges != NULL) {
-		free(g->edges);
+	//TODO there is actually only 1 pointer to all of these now!
+//	if (g->edges != NULL) {
+//		free(g->edges);
+//	}
+//	if (g->nodes != NULL) {
+//		free(g->nodes);
+//	}
+	if(g -> dir != NULL) {
+		free(g->dir);
 	}
-	if (g->nodes != NULL) {
-		free(g->nodes);
+	if(g -> filename != NULL){
+		free( g->filename);
 	}
 	free(g);
 }
@@ -73,10 +92,10 @@ void graph_initRandom(graph* g, int width, int height, int screenWidth,
 }
 
 void graph_toSVG(graph* g, const char* filename, int screenwidth,
-		int screenheight, bool hasWalls, long time, layout_params* params, const char* graphfile) {
-	FILE* svg = fopen(filename, "w");
+		int screenheight, bool hasWalls, long time, layout_params* params) {
+	FILE* svg = ensureFile(filename);
 	if (svg == NULL) {
-		printf("Failed to create file %s.\n", filename);
+		printf("Failed to create file (%s).\n", filename);
 		return;
 	}
 
@@ -126,7 +145,7 @@ void graph_toSVG(graph* g, const char* filename, int screenwidth,
 
 	stat = fprintf(svg, "<!--\n"); // Begin comment block (for easy extraction)
 	stat = fprintf(svg, "elapsed: %ld\n", time);
-	stat = fprintf(svg, "filename: %s\n", graphfile);
+	stat = fprintf(svg, "filename: %s\n", g->filename);
 
 
 	//Print the program arguments
@@ -147,7 +166,7 @@ void graph_toSVG(graph* g, const char* filename, int screenwidth,
 	stat = fprintf(svg, "kg: %f\n", params->kg);
 	stat = fprintf(svg, "wellMass: %f\n", params->wellMass);
 	stat = fprintf(svg, "edgeCharge: %f\n", params->edgeCharge);
-	stat = fprintf(svg, "finalKineticEnergy: %f\n", params->finalKinectEnergy);
+	stat = fprintf(svg, "finalKineticEnergy: %f\n", g->finalEK);
 	stat = fprintf(svg, "nodeWidth: %f\n", g->nodes[0].width);
 	stat = fprintf(svg, "nodeHeight: %f\n", g->nodes[0].height);
 	stat = fprintf(svg, "nodeCharge: %f\n", g->nodes[0].charge);
@@ -204,7 +223,7 @@ void graph_toSVG(graph* g, const char* filename, int screenwidth,
 						x, y, width, height, "rgb(0,0,255)", "rgb(0,0,0)",
 						1.0f);
 		if (stat < 0) {
-			printf("An error occured while writing to the file");
+			printf("An error occurred while writing to the file");
 			fclose(svg);
 			return;
 		}
@@ -218,4 +237,58 @@ void graph_toSVG(graph* g, const char* filename, int screenwidth,
 	fprintf(svg, "</svg>");
 	fclose(svg);
 
+}
+
+FILE* ensureFile(const char* filename){
+	FILE* file =  fopen(filename, "w");
+	if(file != NULL){
+		return file;
+	}
+
+	//Ok lets check to see if the directory exists;
+	char* dir = (char*)malloc(sizeof(char)*(strlen(filename)+3));
+	if(dir == NULL){
+		fprintf(stderr,"Failed to allocated space for dir\n");
+		exit(-1);
+	}
+	strcpy(dir,filename);
+
+	char* p = strrchr(dir,'/');
+	if(p == NULL){
+		return NULL;
+	}
+	*p = '\0';
+
+	struct stat fileinfo;
+	//Get the file information to make sure it is a directory
+	int slashCount= 0;
+	while (stat(dir, &fileinfo)) {
+		//It failed, hopefully it just doesn't exist
+		int error = errno;
+		if(error != ENOENT){
+			fprintf(stderr,"An error occurred while trying to create the file: %s\n%s\n",filename,strerror(error));
+			return NULL;
+		}
+
+		p = strrchr(dir,'/');
+		if(p == NULL){
+			fprintf(stderr,"An error occurred while trying to create the file: %s\n%s\n",filename,strerror(error));
+			return NULL;
+		}
+		*p = '\0';
+
+		slashCount++;
+	}
+
+	for(;slashCount > 0 ; slashCount--){
+		int end = strlen(dir);
+		dir[end] = '/';
+		if(mkdir(dir,S_IRUSR | S_IWUSR | S_IXUSR)){
+			int error = errno;
+			fprintf(stderr, "An error occurred while trying to create directories\n%s\n",strerror(error));
+			return NULL;
+		}
+	}
+	free(dir);
+	return fopen(filename, "w");
 }

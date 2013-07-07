@@ -1,7 +1,7 @@
 #!/bin/bash
 
-datadir=/local/scratch/temp/data
-outfile=/local/scratch/temp/data/outfile.csv
+datadir=/local/scratch/temp/data/current
+outfile=/local/scratch/temp/data/current/outfile.csv
 
 count=0
 for dir in $(ls $datadir)

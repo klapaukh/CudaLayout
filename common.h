@@ -27,7 +27,6 @@ typedef struct {
   float wellMass;
   float edgeCharge;
   bool cpuLoop;
-  float finalKinectEnergy;
 } layout_params;
 
 

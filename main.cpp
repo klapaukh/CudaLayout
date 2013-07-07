@@ -20,12 +20,12 @@ void reshape(int, int);
 void setLight();
 void initCamera(int, int);
 
-graph* glGraph = NULL;
+graph** glGraph = NULL;
 layout_params* glParams = NULL;
 
 void usage() {
 	fprintf(stderr,
-			"Usage: layout [-f filename] [-gui] [-cpuLoop] [-noOuput] [-o outfile] [-Ke 500] [-Kh 0.0005] [-Kl -0.05] [-nodeCharge 3] [-edgeCharge 3] [-Kg 0.06] [-mus 0.3] [-muk 0.04] [-i 10000] [-width 1920] [-height 1080] [-t 1] [-nm 1] [-m 1] [-cRest -0.9] [-friction 3] [-spring 1] [-walls 1] [-forces 1]\n");
+			"Usage: layout [-f filename] [-d rootdir] [-gui] [-cpuLoop] [-noOuput] [-o outfile/dir] [-Ke 500] [-Kh 0.0005] [-Kl -0.05] [-nodeCharge 3] [-edgeCharge 3] [-Kg 0.06] [-mus 0.3] [-muk 0.04] [-i 10000] [-width 1920] [-height 1080] [-t 1] [-nm 1] [-m 1] [-cRest -0.9] [-friction 3] [-spring 1] [-walls 1] [-forces 1]\n");
 	fprintf(stderr, "Forces:\n");
 
 	fprintf(stderr, "\nFriction:\n");
@@ -42,7 +42,7 @@ void usage() {
 	fprintf(stderr, " Gravity Well        - 4\n");
 
 	fprintf(stderr, "\nPrimary:\n");
-	fprintf(stderr, " Coulombs Law        - 1\n");
+	fprintf(stderr, " Coulomb's Law        - 1\n");
 	fprintf(stderr, " Degree-Based Charge - 2\n");
 	fprintf(stderr, " Charged Edges       - 4\n");
 	fprintf(stderr, " Wrap Around Forces  - 8\n");
@@ -75,13 +75,16 @@ int readInt(int argc, char** argv, int i) {
 	}
 
 	if (val > INT_MAX || val < INT_MIN) {
-		fprintf(stderr, "Value given to argument %s outside of integer range", argv[i - 1]);
+		fprintf(stderr, "Value given to argument %s outside of integer range",
+				argv[i - 1]);
 		exit(EXIT_FAILURE);
 	}
 
 	/* If we got here, strtol() successfully parsed a number */
 	if (*strend != '\0') { /* Not necessarily an error... */
-		fprintf(stderr, "Further characters after number: %s in argument for %s\n", strend, argv[i - 1]);
+		fprintf(stderr,
+				"Further characters after number: %s in argument for %s\n",
+				strend, argv[i - 1]);
 	}
 
 	return (int) val;
@@ -101,8 +104,10 @@ float readFloat(int argc, char** argv, int i) {
 	float val = strtof(argv[i], &strend);
 
 	/* Check for various possible errors */
-	if ((errno == ERANGE && (val == FLT_MAX || val == FLT_MIN)) || (errno != 0 && val == 0)) {
-		fprintf(stderr, "An error occured while parsing the argument to %s\n", argv[i - 1]);
+	if ((errno == ERANGE && (val == FLT_MAX || val == FLT_MIN))
+			|| (errno != 0 && val == 0)) {
+		fprintf(stderr, "An error occured while parsing the argument to %s\n",
+				argv[i - 1]);
 		perror("readFloat");
 		exit(EXIT_FAILURE);
 	}
@@ -114,7 +119,9 @@ float readFloat(int argc, char** argv, int i) {
 
 	/* If we got here, strtol() successfully parsed a number */
 	if (*strend != '\0') { /* Not necessarily an error... */
-		fprintf(stderr, "Further characters after number: %s in argument for %s\n", strend, argv[i - 1]);
+		fprintf(stderr,
+				"Further characters after number: %s in argument for %s\n",
+				strend, argv[i - 1]);
 	}
 
 	return val;
@@ -137,6 +144,7 @@ int main(int argc, char** argv) {
 	bool gui = false;
 	float nodeCharge = 3;
 	bool output = true;
+	bool isFile = true;
 
 	layout_params* params = (layout_params*) malloc(sizeof(layout_params));
 	params->ke = 500;
@@ -154,9 +162,9 @@ int main(int argc, char** argv) {
 	params->kg = 0.06;
 	params->wellMass = 1;
 	params->edgeCharge = nodeCharge;
-	params->forcemode = COULOMBS_LAW | HOOKES_LAW_SPRING | FRICTION | DRAG | BOUNCY_WALLS;
+	params->forcemode = COULOMBS_LAW | HOOKES_LAW_SPRING | FRICTION | DRAG
+			| BOUNCY_WALLS;
 	params->cpuLoop = false;
-	params->finalKinectEnergy = -1;
 
 	if (argc < 2) {
 		usage();
@@ -165,7 +173,23 @@ int main(int argc, char** argv) {
 
 	for (int i = 1; i < argc; i++) {
 		if (strcmp(argv[i], "-f") == 0) {
+			if (filename != NULL) {
+				printf(
+						"An input directory has already been provided (%s).\nCan only use one of -f and -d.\n",
+						filename);
+				exit(-1);
+			}
 			filename = readString(argc, argv, ++i);
+			isFile = true;
+		} else if (strcmp(argv[i], "-d") == 0) {
+			if (filename != NULL) {
+				printf(
+						"An input file has already been provided (%s).\nCan only use one of -f and -d.\n",
+						filename);
+				exit(-1);
+			}
+			filename = readString(argc, argv, ++i);
+			isFile = false;
 		} else if (strcmp(argv[i], "-o") == 0) {
 			outfile = readString(argc, argv, ++i);
 		} else if (strcmp(argv[i], "-Ke") == 0) {
@@ -210,15 +234,19 @@ int main(int argc, char** argv) {
 			params->forcemode = params->forcemode | (fricForce << 2);
 		} else if (strcmp(argv[i], "-spring") == 0) {
 			int springForce = readInt(argc, argv, ++i);
-			params->forcemode = params->forcemode & ~(HOOKES_LAW_SPRING | LOG_SPRING);
+			params->forcemode = params->forcemode
+					& ~(HOOKES_LAW_SPRING | LOG_SPRING);
 			params->forcemode = params->forcemode | (springForce);
 		} else if (strcmp(argv[i], "-walls") == 0) {
 			int wallForce = readInt(argc, argv, ++i);
-			params->forcemode = params->forcemode & ~(BOUNCY_WALLS | CHARGED_WALLS | GRAVITY_WELL);
+			params->forcemode = params->forcemode
+					& ~(BOUNCY_WALLS | CHARGED_WALLS | GRAVITY_WELL);
 			params->forcemode = params->forcemode | (wallForce << 4);
 		} else if (strcmp(argv[i], "-forces") == 0) {
 			int primForce = readInt(argc, argv, ++i);
-			params->forcemode = params->forcemode & ~(COULOMBS_LAW | DEGREE_BASED_CHARGE | CHARGED_EDGE_CENTERS | WRAP_AROUND_FORCES);
+			params->forcemode = params->forcemode
+					& ~(COULOMBS_LAW | DEGREE_BASED_CHARGE
+							| CHARGED_EDGE_CENTERS | WRAP_AROUND_FORCES);
 			params->forcemode = params->forcemode | (primForce << 7);
 
 		} else {
@@ -233,17 +261,29 @@ int main(int argc, char** argv) {
 		return EXIT_FAILURE;
 	}
 
-	debug("Reading graph: %s\n", filename);
-	graph* g = read(filename);
-	if (g == NULL) {
+	graph** g;
+	int graphCount = 0;
+	if (isFile) {
+		debug("Reading graph: %s\n", filename);
+		g = (graph**) malloc(sizeof(graph*));
+		g[0] = readFile(filename);
+		graphCount = 1;
+	} else {
+		g = readDir(filename, &graphCount);
+	}
+
+	if (g == NULL || graphCount < 1) {
 		fprintf(stderr, "Creating a graph failed. Terminating\n");
 		usage();
 		return EXIT_FAILURE;
 	}
 
-	graph_initRandom(g, 20, 10, params->width, params->height, nodeCharge);
+	for (int i = 0; i < graphCount; i++) {
+		graph_initRandom(g[i], 20, 10, params->width, params->height,
+				nodeCharge);
+	}
 
-	if (gui) {
+	if (gui && isFile) {
 		glutInit(&argc, argv);
 		glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA | GLUT_DEPTH);
 		glutInitWindowSize(params->width, params->height);
@@ -259,19 +299,20 @@ int main(int argc, char** argv) {
 		glParams = params;
 		glutMainLoop();
 
+	} else if (gui) {
+		printf("Cannot use gui mode with a directory.\n");
+		exit(-1);
 	}
 
 	/* The graph is now is a legal state.
 	 * It is not using the GUI.
 	 * It is possible to lay it out now
 	 */
-//	if (output) {
-//		graph_toSVG(g, "before.svg", params->width, params->height, (params->forcemode & (BOUNCY_WALLS | CHARGED_WALLS)) != 0,0,params);
-//	}
 	struct timeval tstart, tend;
 	gettimeofday(&tstart, NULL);
 
-	graph_layout(g, params);
+
+	graph_layout(g, graphCount, params);
 
 	gettimeofday(&tend, NULL);
 	long start = tstart.tv_sec * 1000000 + tstart.tv_usec;
@@ -280,13 +321,71 @@ int main(int argc, char** argv) {
 
 	debug("Elapsed Time (us): %ld\n", msElapsed);
 
-	if (outfile == NULL) {
+	if (outfile == NULL && isFile) {
 		outfile = "after.svg";
 	}
-	if (output) {
-		graph_toSVG(g, outfile, params->width, params->height, (params->forcemode & (BOUNCY_WALLS | CHARGED_WALLS)) != 0, msElapsed, params,filename);
+	if (output && (outfile != NULL)) {
+		for (int i = 0; i < graphCount; i++) {
+#define BUFF_SIZE 1024
+			char thisOutFile[BUFF_SIZE];
+			strncpy(thisOutFile,outfile,BUFF_SIZE);
+
+			if(!isFile){
+				//Does it end on a /
+				int len = strlen(thisOutFile);
+				if(thisOutFile[len-1] != '/'){
+					if(len < BUFF_SIZE - 2){ //Keep enough space for the '\0'
+						thisOutFile[len++] = '/';
+						thisOutFile[len] = '\0';
+					}else{
+						fprintf(stderr,"File name too long (%s [/] %s [/] %s)\n. Not creating svg.\n", outfile, (g[i])->dir, g[i]->filename);
+						continue;
+					}
+				}
+				//Now concatenate the dir name
+				if(g[i]->dir != NULL){
+					int len2 = strlen(g[i]->dir);
+					if(len + len2 +1 > BUFF_SIZE){
+						fprintf(stderr,"File name too long (%s [/] %s [/] %s)\n. Not creating svg.\n", outfile, (g[i])->dir, g[i]->filename);
+						continue;
+					}
+					 strcat(thisOutFile, g[i]->dir + (g[i]->dir[0]=='/'? 1: 0));
+				}
+
+				//Now the file name
+				int len2 = strlen(g[i]->filename);
+				if(len + len2 + 1 > BUFF_SIZE){
+					fprintf(stderr,"File name too long (%s [/] %s [/] %s)\n. Not creating svg.\n", outfile, (g[i])->dir, g[i]->filename);
+					continue;
+				}
+				strcat(thisOutFile,g[i]->filename);
+				char* extension = strstr(thisOutFile, ".graphml");
+				if(extension ==NULL){
+					fprintf(stderr,"Something went wrong. Could not find .graphml in %s\nTerminating\n", thisOutFile);
+					exit(EXIT_FAILURE);
+				}
+				strcpy(extension, ".svg");
+				//Now the filename is finally right!
+
+			}
+
+
+			graph_toSVG(g[i], thisOutFile, params->width, params->height,
+					(params->forcemode & (BOUNCY_WALLS | CHARGED_WALLS)) != 0,
+					msElapsed, params);
+		}
 	}
-	graph_free(g);
+
+
+	//Free all the graphs and the structure that holds it
+	free(g[0]->nodes);
+	free(g[0]->edges);
+	for (int i = 0; i < graphCount; i++) {
+		graph_free(g[i]);
+	}
+	free(g);
+
+	free(params);
 	return EXIT_SUCCESS;
 
 }
@@ -303,8 +402,8 @@ void display() {
 	if ((glParams->forcemode & (CHARGED_WALLS | BOUNCY_WALLS)) == 0) {
 		//I actually need to normalise all the values for drawing
 		float minx = FLT_MAX, maxx = FLT_MIN, miny = FLT_MAX, maxy = FLT_MIN;
-		for (int i = 0; i < glGraph->numNodes; i++) {
-			node* n = glGraph->nodes + i;
+		for (int i = 0; i < glGraph[0]->numNodes; i++) {
+			node* n = glGraph[0]->nodes + i;
 			if (n->x - n->width / 2 < minx) {
 				minx = n->x - n->width / 2;
 			}
@@ -329,13 +428,13 @@ void display() {
 	glBegin(GL_LINES);
 	glColor3f(1.0f, 0.0f, 0.0f); /* set object color as red */
 
-	for (int i = 0; i < glGraph->numNodes; i++) {
-		for (int j = i + 1; j < glGraph->numNodes; j++) {
-			if (glGraph->edges[i + j * glGraph->numNodes]) {
-				float x1 = glGraph->nodes[i].x;
-				float x2 = glGraph->nodes[j].x;
-				float y1 = glGraph->nodes[i].y;
-				float y2 = glGraph->nodes[j].y;
+	for (int i = 0; i < glGraph[0]->numNodes; i++) {
+		for (int j = i + 1; j < glGraph[0]->numNodes; j++) {
+			if (glGraph[0]->edges[i + j * glGraph[0]->numNodes]) {
+				float x1 = glGraph[0]->nodes[i].x;
+				float x2 = glGraph[0]->nodes[j].x;
+				float y1 = glGraph[0]->nodes[i].y;
+				float y2 = glGraph[0]->nodes[j].y;
 				glVertex2f(x1, y1);
 				glVertex2f(x2, y2);
 			}
@@ -347,8 +446,8 @@ void display() {
 	glBegin(GL_QUADS);
 	glColor3f(0.0, 0, 1.0);
 
-	for (int i = 0; i < glGraph->numNodes; i++) {
-		node* n = glGraph->nodes + i;
+	for (int i = 0; i < glGraph[0]->numNodes; i++) {
+		node* n = glGraph[0]->nodes + i;
 		int x = (int) (n->x - n->width / 2);
 		int y = (int) (n->y - n->height / 2);
 		int width = n->width;
@@ -374,7 +473,7 @@ void display() {
 }
 
 void idle() {
-	graph_layout(glGraph, glParams);
+	graph_layout(glGraph, 1, glParams);
 	glutPostRedisplay();
 }
 

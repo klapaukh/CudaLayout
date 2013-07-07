@@ -1,15 +1,6 @@
 #!/bin/bash
 
-datadir=/local/scratch/temp/data
-
-for dir in $(ls $datadir)
-do
-	for file in $(ls $datadir/$dir)
-	do
-		outfile=${file/svg/out}
-		java -cp /u/students/roma/workspace/GraphAnalyser/bin main.GraphAnalyser ${datadir}/${dir}/${file} > ${datadir}/${dir}/${outfile}
-	done
-done
-
+datadir=/local/scratch/temp/data/current
+java -cp /u/students/roma/workspace/GraphAnalyser/bin main.GraphAnalyser ${datadir} ".*\.svg" > ${datadir}/outfile.csv
 
 
