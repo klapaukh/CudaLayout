@@ -1,10 +1,18 @@
+CUDADIR=
+HOST:= $(shell uname -n)
+ifeq ("$(HOST)","red-tomatoes")
+	CUDADIR=/opt/cuda50
+else
+	CUDADIR=/opt/cuda
+endif
+
 OBJECTS=main.o layout.co graph.o graphmlReader.o debug.o
 TARGET=layout
 CC=g++
-NVCC=/opt/cuda/bin/nvcc
-CFLAGS=-pedantic -Wall -Wextra -lint -I/opt/cuda/include -O2 #-g -pg
-LDFLAGS=-Xlinker -rpath /opt/cuda/lib64 -L/opt/cuda/lib64 -lcudart -lexpat -lGL -lGLU -lglut #-pg
-NCFLAGS=-m64 -I/opt/cuda/include -gencode arch=compute_20,code=sm_20 -gencode arch=compute_20,code=sm_21 -O2#-g -pg
+NVCC=$(CUDADIR)/bin/nvcc
+CFLAGS=-pedantic -Wall -Wextra -lint -I$(CUDADIR)/include -O2 #-g -pg
+LDFLAGS=-Xlinker -rpath $(CUDADIR)/lib64 -L$(CUDADIR)/lib64 -lcudart -lexpat -lGL -lGLU -lglut #-pg
+NCFLAGS=-m64 -I$(CUDADIR)/include -gencode arch=compute_20,code=sm_20 -gencode arch=compute_20,code=sm_21 -O2#-g -pg
 
 all: $(TARGET)
 
