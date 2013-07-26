@@ -33,7 +33,7 @@ typedef struct graph {
 	int numEdgeLabels;
 	int numEdges;
 	int numNodes;
-	double finalEK;
+	float finalEK;
 } graph;
 
 graph* graph_create(void);

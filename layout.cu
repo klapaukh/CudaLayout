@@ -21,7 +21,7 @@ __device__ float computeKineticEnergy(node* nodes, int numNodes, float mass) {
 	return totalEk;
 }
 
-__global__ void layout(node* nodes_all, unsigned char* edges_all, int* numNodes_all, layout_params* paramsArg, double* finalEK, int numGraphs) {
+__global__ void layout(node* nodes_all, unsigned char* edges_all, int* numNodes_all, layout_params* paramsArg, float* finalEK, int numGraphs) {
 
 	int graphIdx = blockIdx.x;
 	int me = threadIdx.x;
@@ -44,19 +44,23 @@ __global__ void layout(node* nodes_all, unsigned char* edges_all, int* numNodes_
 		return;
 	}
 
-	int numEdges = numNodes * numNodes;
 	__shared__ node nodes[150];
 	__shared__ layout_params params;
 	__shared__ unsigned char edges[150 * 150];
 
-	params = *paramsArg;
-	for (int i = 0; i < numNodes; i++) {
-		nodes[i] = nodes_all[nodes_start + i];
-	}
 
-	for (int i = 0; i < numEdges; i++) {
-		edges[i] = edges_all[edges_start + i];
+	//Shared memory copy, don't need to double up work
+	if(me == 0){
+		params = *paramsArg;
 	}
+	nodes[me] = nodes_all[nodes_start + me];
+
+
+	for (int i = 0; i < numNodes; i++) {
+		edges[edges_start + (me*numNodes) + i] = edges_all[edges_start + (me*numNodes) + i];
+	}
+	//Make sure the copies are visible to everyone
+	__syncthreads();
 
 	int forcemode = params.forcemode;
 	float fx, fy;
@@ -69,6 +73,11 @@ __global__ void layout(node* nodes_all, unsigned char* edges_all, int* numNodes_
 		nodes[me].y = params.height / 2;
 		nodes[me].dx = 0;
 		nodes[me].dy = 0;
+
+		nodes_all[me].x = nodes[me].x;
+		nodes_all[me].y = nodes[me].y;
+		nodes_all[me].dx = nodes[me].dx;
+		nodes_all[me].dy = nodes[me].dy;
 		return;
 	}
 	for (int z = 0; z < params.iterations; z++) {
@@ -314,17 +323,14 @@ __global__ void layout(node* nodes_all, unsigned char* edges_all, int* numNodes_
 		nodes[me].dx = node_me.dx;
 		nodes[me].dy = node_me.dy;
 
-		__threadfence();
 		__syncthreads();
 
 	}
 
 	//Clean up at the end
-	if (me == 1) {
-		for (int i = 0; i < numNodes; i++) {
-			nodes_all[nodes_start + i] = nodes[i];
-		}
+	nodes_all[nodes_start + me] = nodes[me];
 
+	if (me == 1) {
 		finalEK[graphIdx] = computeKineticEnergy(nodes, numNodes, params.mass);
 	}
 }
@@ -332,7 +338,7 @@ __global__ void layout(node* nodes_all, unsigned char* edges_all, int* numNodes_
 void graph_layout(graph** g, int numGraphs, layout_params* params) {
 
 //Need to flatten all the host memory to make transfer fast
-	double* finalEK_host = (double*) malloc(sizeof(double) * numGraphs); //This is written to straight from the GPU
+	float* finalEK_host = (float*) malloc(sizeof(float) * numGraphs); //This is written to straight from the GPu
 	int* numNodes_host = (int*) malloc(sizeof(int) * numGraphs);
 	if (finalEK_host == NULL || numNodes_host == NULL) {
 		fprintf(stderr, "Failed to allocated memory for finalEK or numNodes");
@@ -391,7 +397,7 @@ void graph_layout(graph** g, int numGraphs, layout_params* params) {
 //	 need to allocate memory for nodes and edges on the device
 	unsigned char* edges_device;
 	node* nodes_device;
-	double* finalEK_device;
+	float* finalEK_device;
 	int* numNodes_device;
 
 	cudaError_t err;
@@ -430,7 +436,7 @@ void graph_layout(graph** g, int numGraphs, layout_params* params) {
 	err = cudaMalloc(&numNodes_device, sizeof(int) * numGraphs);
 	handleError(err, "Allocating GPU memory for number of nodes");
 
-	err = cudaMalloc(&finalEK_device, sizeof(double) * numGraphs);
+	err = cudaMalloc(&finalEK_device, sizeof(float) * numGraphs);
 	handleError(err, "Allocating GPU memory for finalEK");
 
 	err = cudaMalloc(&params_device, sizeof(layout_params));
@@ -476,7 +482,7 @@ void graph_layout(graph** g, int numGraphs, layout_params* params) {
 		handleError(err, "cudaMemcpy nodes to host");
 	}
 
-	err = cudaMemcpyAsync(finalEK_host, finalEK_device, sizeof(double) * numGraphs, cudaMemcpyDeviceToHost);
+	err = cudaMemcpyAsync(finalEK_host, finalEK_device, sizeof(float) * numGraphs, cudaMemcpyDeviceToHost);
 	if (err != cudaSuccess) {
 		handleError(err, "cudaMemcpy nodes to host");
 	}
