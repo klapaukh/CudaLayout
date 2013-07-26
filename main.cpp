@@ -25,7 +25,7 @@ layout_params* glParams = NULL;
 
 void usage() {
 	fprintf(stderr,
-			"Usage: layout [-f filename] [-d rootdir] [-gui] [-cpuLoop] [-noOuput] [-o outfile/dir] [-Ke 500] [-Kh 0.0005] [-Kl -0.05] [-nodeCharge 3] [-edgeCharge 3] [-Kg 0.06] [-mus 0.3] [-muk 0.04] [-i 10000] [-width 1920] [-height 1080] [-t 1] [-nm 1] [-m 1] [-cRest -0.9] [-friction 3] [-spring 1] [-walls 1] [-forces 1]\n");
+			"Usage: layout [-f filename] [-d rootdir] [-gui] [-cpuLoop] [-noOutput] [-o outfile/dir] [-Ke 500] [-Kh 0.0005] [-Kl -0.05] [-nodeCharge 3] [-edgeCharge 3] [-Kg 0.06] [-mus 0.3] [-muk 0.04] [-i 10000] [-width 1920] [-height 1080] [-t 1] [-nm 1] [-m 1] [-cRest -0.9] [-friction 3] [-spring 1] [-walls 1] [-forces 1]\n");
 	fprintf(stderr, "Forces:\n");
 
 	fprintf(stderr, "\nFriction:\n");
