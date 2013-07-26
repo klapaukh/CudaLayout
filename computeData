@@ -1,6 +1,0 @@
-#!/bin/bash
-
-datadir=/local/scratch/temp/data/current
-java -cp /u/students/roma/workspace/GraphAnalyser/bin main.GraphAnalyser ${datadir} ".*\.svg" > ${datadir}/outfile.csv
-
-
