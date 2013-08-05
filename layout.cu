@@ -479,20 +479,17 @@ void graph_layout(graph** g, int numGraphs, layout_params* params) {
 	} else {
 		layout<<<nbl, nth>>>(nodes_device, edges_device, numNodes_device, params_device, finalEK_device, numGraphs);
 	}
-
+	err = cudaGetLastError();
+	handleError(err,"launching kernel");
 //	err = cudaDeviceSynchronize();
 //	handleError(err, "Waiting for layout to finish");
 
 	/*After computation you must copy the results back*/
 	err = cudaMemcpyAsync(nodes_host, nodes_device, sizeof(node) * lengthNodes, cudaMemcpyDeviceToHost);
-	if (err != cudaSuccess) {
-		handleError(err, "cudaMemcpy nodes to host");
-	}
+	handleError(err, "cudaMemcpy nodes to host");
 
 	err = cudaMemcpyAsync(finalEK_host, finalEK_device, sizeof(float) * numGraphs, cudaMemcpyDeviceToHost);
-	if (err != cudaSuccess) {
-		handleError(err, "cudaMemcpy nodes to host");
-	}
+	handleError(err, "cudaMemcpy nodes to host");
 
 	for (int i = 0; i < numGraphs; i++) {
 		g[i]->finalEK = finalEK_host[i];
