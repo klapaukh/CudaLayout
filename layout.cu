@@ -425,6 +425,9 @@ void graph_layout(graph** g, int numGraphs, layout_params* params) {
 	handleError(err,"Getting device properties");
 
 	printf("Kernel time out enabled: %s\n", prop.kernelExecTimeoutEnabled?"true":"false");
+	printf("Compute mode: %d.%d\n", prop.major, prop.minor);
+	printf("Max grid size: %d\n", prop.maxGridSize);
+	printf("Max Threads per block: %d\n", prop.maxThreadsPerBlock);
 
 	err = cudaDeviceReset();
 	handleError(err, "Device Reset");
