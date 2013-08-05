@@ -499,6 +499,8 @@ void graph_layout(graph** g, int numGraphs, layout_params* params) {
 
 	free(finalEK_host);
 
+	err = cudaDeviceSynchronize();
+	handleError(err, "Waiting for everything to finish");
 	/*
 	 All finished, free the memory now
 	 */
@@ -517,8 +519,6 @@ void graph_layout(graph** g, int numGraphs, layout_params* params) {
 	err = cudaFree(finalEK_device);
 	handleError(err, "cudaFree finalEK_device");
 
-	err = cudaDeviceSynchronize();
-	handleError(err, "Waiting for everything to finish");
 }
 
 void handleError(cudaError_t error, const char* context) {
