@@ -8,6 +8,8 @@
 #include "layout.h"
 #include "debug.h"
 
+#define MAX_NODES 150
+
 void handleError(cudaError_t, const char*);
 
 __device__ float computeKineticEnergy(node* nodes, int numNodes, float mass) {
@@ -44,9 +46,13 @@ __global__ void layout(node* nodes_all, unsigned char* edges_all, int* numNodes_
 		return;
 	}
 
-	__shared__ node nodes[150];
+	if(numNodes > MAX_NODES){
+		printf("MAX_NODES too small %d\n", numNodes);
+		return;
+	}
+	__shared__ node nodes[MAX_NODES];
 	__shared__ layout_params params;
-	__shared__ unsigned char edges[150 * 150];
+	__shared__ unsigned char edges[MAX_NODES * MAX_NODES];
 
 
 	//Shared memory copy, don't need to double up work
@@ -57,7 +63,7 @@ __global__ void layout(node* nodes_all, unsigned char* edges_all, int* numNodes_
 
 
 	for (int i = 0; i < numNodes; i++) {
-		edges[edges_start + (me*numNodes) + i] = edges_all[edges_start + (me*numNodes) + i];
+		edges[(me*numNodes) + i] = edges_all[edges_start + (me*numNodes) + i];
 	}
 	//Make sure the copies are visible to everyone
 	__syncthreads();
