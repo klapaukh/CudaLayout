@@ -47,7 +47,7 @@ __global__ void layout(node* nodes_all, unsigned char* edges_all, int* numNodes_
 	}
 
 	if(numNodes > MAX_NODES){
-		printf("MAX_NODES too small %d\n", numNodes);
+	//	printf("MAX_NODES too small %d\n", numNodes);
 		return;
 	}
 	__shared__ node nodes[MAX_NODES];
@@ -441,6 +441,7 @@ void graph_layout(graph** g, int numGraphs, layout_params* params) {
 
 	err = cudaMalloc(&numNodes_device, sizeof(int) * numGraphs);
 	handleError(err, "Allocating GPU memory for number of nodes");
+
 
 	err = cudaMalloc(&finalEK_device, sizeof(float) * numGraphs);
 	handleError(err, "Allocating GPU memory for finalEK");
