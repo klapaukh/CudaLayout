@@ -2,7 +2,8 @@ CUDADIR=
 HOST:= $(shell uname -n)
 ifeq ("$(HOST)","red-tomatoes")
 	CUDADIR=/opt/cuda50
-	NCFLAGS=-gencode arch=compute_13,code=sm_13
+	NCFLAGS=-gencode arch=compute_13,code=sm_13 -Xopencc "-W -Wall -Wextra -lint -pedantic"
+
 else
 	CUDADIR=/opt/cuda
 	NCFLAGS=-gencode arch=compute_20,code=sm_20 -gencode arch=compute_20,code=sm_21
@@ -15,10 +16,10 @@ NVCC=$(CUDADIR)/bin/nvcc
 FLAGS=
 CFLAGS=-pedantic -Wall -Wextra -lint -I$(CUDADIR)/include
 LDFLAGS=-Xlinker -rpath $(CUDADIR)/lib64 -L$(CUDADIR)/lib64 -lcudart -lexpat -lGL -lGLU -lglut
-NCFLAGS+=-m64 -I$(CUDADIR)/include -Xcompiler "-Wall -Wextra -lint" -Xopencc "-W -Wall -Wextra -lint -pedantic"
+NCFLAGS+=-m64 -I$(CUDADIR)/include -Xcompiler "-Wall -Wextra -lint"
 
 release: CFLAGS += -O3
-release: NCFLAGS += -O3
+release: NCFLAGS += -O3 -use_fast_math
 release: LDFLAGS += -O3
 release: all
 
