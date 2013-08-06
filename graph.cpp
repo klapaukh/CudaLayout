@@ -48,13 +48,7 @@ void graph_free(graph* g) {
 		}
 		free(g->edgeLabels);
 	}
-	//TODO there is actually only 1 pointer to all of these now!
-//	if (g->edges != NULL) {
-//		free(g->edges);
-//	}
-//	if (g->nodes != NULL) {
-//		free(g->nodes);
-//	}
+
 	if(g -> dir != NULL) {
 		free(g->dir);
 	}
@@ -180,7 +174,7 @@ void graph_toSVG(graph* g, const char* filename, int screenwidth,
 	for (int i = 0; i < g->numNodes; i++) {
 		stat = fprintf(svg, "%0.2f %0.2f ", g->nodes[i].x, g->nodes[i].y);
 		for (int j = 0; j < g->numNodes; j++) {
-			stat = fprintf(svg, "%d ", (g->edges[i * g->numNodes + j]) ? 1 : 0);
+			stat = fprintf(svg, "%d ", (bitarray_get(g->edges,i * g->numNodes + j)) ? 1 : 0);
 		}
 		fprintf(svg, "\n"); //end row
 	}
@@ -191,7 +185,7 @@ void graph_toSVG(graph* g, const char* filename, int screenwidth,
 	/*Draw edges*/
 	for (i = 0; i < g->numNodes; i++) {
 		for (j = i + 1; j < g->numNodes; j++) {
-			if (g->edges[i + j * g->numNodes]) {
+			if (bitarray_get(g->edges,i + j * g->numNodes)) {
 				int x1 = g->nodes[i].x;
 				int x2 = g->nodes[j].x;
 				int y1 = g->nodes[i].y;

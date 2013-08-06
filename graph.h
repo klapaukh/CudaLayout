@@ -2,6 +2,7 @@
 #define GRAPHH
 
 #include "common.h"
+#include "bitarray.h"
 
 typedef struct node {
 	float x;
@@ -27,7 +28,7 @@ typedef struct graph {
 	char * filename;
 	char** nodeLabels;
 	char** edgeLabels;
-	unsigned char* edges;
+	bitarray edges;
 	node* nodes;
 	int numNodeLabels;
 	int numEdgeLabels;

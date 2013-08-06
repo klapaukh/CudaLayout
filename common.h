@@ -29,6 +29,4 @@ typedef struct {
   bool cpuLoop;
 } layout_params;
 
-
-
 #endif /* COMMON_H_ */

@@ -11,6 +11,7 @@
 #include "graphmlReader.h"
 #include "layout.h"
 #include "debug.h"
+#include "bitarray.h"
 
 //GUI stuff
 void display();
@@ -379,7 +380,7 @@ int main(int argc, char** argv) {
 
 	//Free all the graphs and the structure that holds it
 	free(g[0]->nodes);
-	free(g[0]->edges);
+	bitarray_free(g[0]->edges);
 	for (int i = 0; i < graphCount; i++) {
 		graph_free(g[i]);
 	}
@@ -430,7 +431,7 @@ void display() {
 
 	for (int i = 0; i < glGraph[0]->numNodes; i++) {
 		for (int j = i + 1; j < glGraph[0]->numNodes; j++) {
-			if (glGraph[0]->edges[i + j * glGraph[0]->numNodes]) {
+			if (bitarray_get(glGraph[0]->edges, i + j * glGraph[0]->numNodes)) {
 				float x1 = glGraph[0]->nodes[i].x;
 				float x2 = glGraph[0]->nodes[j].x;
 				float y1 = glGraph[0]->nodes[i].y;

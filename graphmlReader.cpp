@@ -145,7 +145,7 @@ graph* readFile(const char* filename) {
 	g->nodeLabels = (char**) malloc(sizeof(char*) * data.numNode);
 	g->edgeLabels = (char**) malloc(sizeof(char*) * (data.numEdge + 1));
 	g->nodes = (node*) malloc(sizeof(node) * data.numNode);
-	g->edges = (unsigned char*) malloc(sizeof(unsigned char) * data.numNode * data.numNode);
+	g->edges = bitarray_create(data.numNode * data.numNode);
 
 	char* graphFileNamePointer = (char*) malloc(sizeof(char) * (strlen(filename) + 1)); //Space for null byte on the end
 	if(graphFileNamePointer == NULL){
@@ -181,7 +181,7 @@ graph* readFile(const char* filename) {
 	int j;
 	for (i = 0; i < data.numNode; i++) {
 		for (j = 0; j < data.numNode; j++) {
-			g->edges[i + j * g->numNodes] = 0;
+			bitarray_set(g->edges, i + j * g->numNodes, false);
 		}
 	}
 
@@ -201,8 +201,8 @@ graph* readFile(const char* filename) {
 			printf("Could not find nodes for edge (%s,%s). Failed to create  graph\n", data.edges[i].source, data.edges[i].target);
 			return NULL;
 		}
-		g->edges[sourceid + targetid * g->numNodes] = i + 1;
-		g->edges[targetid + sourceid * g->numNodes] = i + 1;
+		bitarray_set(g->edges,sourceid + targetid * g->numNodes, true);
+		bitarray_set(g->edges,targetid + sourceid * g->numNodes, true);
 	}
 
 	//Graph is now actually working

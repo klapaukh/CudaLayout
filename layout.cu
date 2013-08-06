@@ -8,7 +8,21 @@
 #include "layout.h"
 #include "debug.h"
 
-#define MAX_NODES 110
+#define MAX_NODES 150
+
+__device__ int cuda_bitarray_numCells(int length){
+	int numCells = length / CELL_SIZE;
+	numCells += ((length % CELL_SIZE) == 0)? 0 : 1;
+	return numCells;
+}
+
+__device__ bool cuda_bitarray_get(bitarray array, int index){
+	int cell = index / CELL_SIZE;
+	int internalOffset = index % CELL_SIZE;
+	unsigned char mask = 0x01 << internalOffset;
+	unsigned char value = array[cell] & mask;
+	return value;
+}
 
 void handleError(cudaError_t, const char*);
 
@@ -23,7 +37,7 @@ __device__ float computeKineticEnergy(node* nodes, int numNodes, float mass) {
 	return totalEk;
 }
 
-__global__ void layout(node* nodes_all, unsigned char* edges_all, int* numNodes_all, layout_params* paramsArg, float* finalEK, int numGraphs) {
+__global__ void layout(node* nodes_all, unsigned char* edges_all, int* numNodes_all, layout_params* paramsArg, float* finalEK, int* nodeOffset, int* edgeOffset, int numGraphs) {
 
 	int graphIdx = blockIdx.x;
 	int me = threadIdx.x;
@@ -32,13 +46,8 @@ __global__ void layout(node* nodes_all, unsigned char* edges_all, int* numNodes_
 		return;
 	}
 
-	int nodes_start = 0;
-	int edges_start = 0;
-	for (int i = 0; i < graphIdx; i++) {
-		int n = numNodes_all[i];
-		nodes_start += n;
-		edges_start += n * n;
-	}
+	int nodes_start = nodeOffset[graphIdx];
+	int edges_start = edgeOffset[graphIdx];
 
 	int numNodes = numNodes_all[graphIdx];
 
@@ -52,19 +61,22 @@ __global__ void layout(node* nodes_all, unsigned char* edges_all, int* numNodes_
 	}
 	__shared__ node nodes[MAX_NODES];
 	__shared__ layout_params params;
-	__shared__ unsigned char edges[MAX_NODES * MAX_NODES];
+	__shared__ unsigned char bitedges[((MAX_NODES * MAX_NODES)/4+1)];
 
 
 	//Shared memory copy, don't need to double up work
 	if(me == 0){
 		params = *paramsArg;
+
+		int edgesSize = cuda_bitarray_numCells(numNodes * numNodes);
+		for (int i = 0; i < edgesSize; i++) {
+			bitedges[me + i] = edges_all[edges_start + i];
+		}
 	}
+
 	nodes[me] = nodes_all[nodes_start + me];
 
 
-	for (int i = 0; i < numNodes; i++) {
-		edges[(me*numNodes) + i] = edges_all[edges_start + (me*numNodes) + i];
-	}
 	//Make sure the copies are visible to everyone
 	__syncthreads();
 
@@ -116,7 +128,7 @@ __global__ void layout(node* nodes_all, unsigned char* edges_all, int* numNodes_
 			}
 
 			//For nodes which are also connected
-			if (edges[i + me * numNodes]) {
+			if (cuda_bitarray_get(bitedges,i + me * numNodes)) {
 				if ((forcemode & HOOKES_LAW_SPRING) != 0) {
 					//Attractive spring force
 					float naturalWidth = nodes_i.width + node_me.width;
@@ -140,7 +152,7 @@ __global__ void layout(node* nodes_all, unsigned char* edges_all, int* numNodes_
 		if ((forcemode & CHARGED_EDGE_CENTERS) != 0) {
 			for (int src = 0; src < numNodes; src++) {
 				for (int dst = src; dst < numNodes; dst++) {
-					if (src != me && dst != me && edges[src + dst * numNodes]) {
+					if (src != me && dst != me && cuda_bitarray_get(bitedges,src + dst * numNodes)) {
 						//Iterate through all the edges, but don't double up, skip non edges
 						//And skip edges connected to me
 
@@ -170,7 +182,7 @@ __global__ void layout(node* nodes_all, unsigned char* edges_all, int* numNodes_
 						q1 = q2 = params.edgeCharge;
 						//Go through all of my edges
 						for (int end = 0; end < numNodes; end++) {
-							if (edges[end + me * numNodes]) {
+							if (cuda_bitarray_get(bitedges,end + me * numNodes)) {
 								//There is an edge between me and them!
 								float edge2x = (node_me.x + nodes[end].x) / 2.0f;
 								float edge2y = (node_me.y + nodes[end].y) / 2.0f;
@@ -346,8 +358,11 @@ void graph_layout(graph** g, int numGraphs, layout_params* params) {
 //Need to flatten all the host memory to make transfer fast
 	float* finalEK_host = (float*) malloc(sizeof(float) * numGraphs); //This is written to straight from the GPu
 	int* numNodes_host = (int*) malloc(sizeof(int) * numGraphs);
-	if (finalEK_host == NULL || numNodes_host == NULL) {
-		fprintf(stderr, "Failed to allocated memory for finalEK or numNodes");
+	int* nodeOffset_host = (int*) malloc(sizeof(int)*numGraphs);
+	int* edgeOffset_host = (int*) malloc(sizeof(int)*numGraphs);
+
+	if (finalEK_host == NULL || numNodes_host == NULL || nodeOffset_host == NULL || edgeOffset_host == NULL) {
+		fprintf(stderr, "Failed to allocated memory for finalEK, numNodes, nodeOffset, or edgeOffset");
 		exit(-1);
 	}
 
@@ -356,11 +371,16 @@ void graph_layout(graph** g, int numGraphs, layout_params* params) {
 	int maxNumNodes = 0;
 
 	for (int i = 0; i < numGraphs; i++) {
+		nodeOffset_host[i] = lengthNodes;
+		edgeOffset_host[i] = lengthEdges;
+
 		numNodes_host[i] = g[i]->numNodes;
 		finalEK_host[i] = -1;
-		lengthEdges += numNodes_host[i] * numNodes_host[i];
 		lengthNodes += numNodes_host[i];
 		maxNumNodes = max(maxNumNodes, g[i]->numNodes);
+
+		int sizeEdgeArray = bitarray_numCells(numNodes_host[i] * numNodes_host[i]);
+		lengthEdges += sizeEdgeArray;
 	}
 
 	node* nodes_host;
@@ -379,24 +399,20 @@ void graph_layout(graph** g, int numGraphs, layout_params* params) {
 			exit(-1);
 		}
 
-		//We can use one array to store all the nodes, and just give internal pointers to it around
-		int nodes_offset = 0;
-		int edges_offset = 0;
 		for (int i = 0; i < numGraphs; i++) {
 			int num_nodes = g[i]->numNodes;
 			int num_edges = num_nodes * num_nodes;
-			memcpy(nodes_host + nodes_offset, g[i]->nodes, sizeof(node) * num_nodes);
-			memcpy(edges_host + edges_offset, g[i]->edges, sizeof(unsigned char) * num_edges);
+			memcpy(nodes_host + nodeOffset_host[i], g[i]->nodes, sizeof(node) * num_nodes);
+			memcpy(edges_host + edgeOffset_host[i], g[i]->edges, sizeof(unsigned char) * bitarray_numCells(num_edges));
 
 			//Delete the old ones
 			free(g[i]->nodes);
 			free(g[i]->edges);
-			//Put in the new values
-			g[i]->nodes = nodes_host + nodes_offset;
-			g[i]->edges = edges_host + edges_offset;
 
-			nodes_offset += num_nodes;
-			edges_offset += num_edges;
+			//Put in the new values
+			g[i]->nodes = nodes_host + nodeOffset_host[i];
+			g[i]->edges = edges_host + edgeOffset_host[i];
+
 		}
 	}
 
@@ -405,6 +421,8 @@ void graph_layout(graph** g, int numGraphs, layout_params* params) {
 	node* nodes_device;
 	float* finalEK_device;
 	int* numNodes_device;
+	int* nodeOffset_device;
+	int* edgeOffset_device;
 
 	cudaError_t err;
 	layout_params* params_device;
@@ -446,6 +464,12 @@ void graph_layout(graph** g, int numGraphs, layout_params* params) {
 	err = cudaMalloc(&numNodes_device, sizeof(int) * numGraphs);
 	handleError(err, "Allocating GPU memory for number of nodes");
 
+	err = cudaMalloc(&nodeOffset_device, sizeof(int) * numGraphs);
+	handleError(err, "Allocating GPU memory for nodeOffset");
+
+	err = cudaMalloc(&edgeOffset_device, sizeof(int) * numGraphs);
+	handleError(err, "Allocating GPU memory for edgeOffset");
+
 
 	err = cudaMalloc(&finalEK_device, sizeof(float) * numGraphs);
 	handleError(err, "Allocating GPU memory for finalEK");
@@ -466,27 +490,38 @@ void graph_layout(graph** g, int numGraphs, layout_params* params) {
 	err = cudaMemcpyAsync(numNodes_device, numNodes_host, sizeof(int) * numGraphs, cudaMemcpyHostToDevice);
 	handleError(err, "cudaMemcpy numNodes to device");
 
+	err = cudaMemcpyAsync(nodeOffset_device, nodeOffset_host, sizeof(int) * numGraphs, cudaMemcpyHostToDevice);
+	handleError(err, "cudaMemcpy nodeOffset to device");
+
+	err = cudaMemcpyAsync(edgeOffset_device, edgeOffset_host, sizeof(int) * numGraphs, cudaMemcpyHostToDevice);
+	handleError(err, "cudaMemcpy edgeOffset to device");
+
 	/*COMPUTE*/
 	int nth = maxNumNodes;
 	int nbl = numGraphs;
 
-//	err = cudaDeviceSynchronize();
-//	handleError(err, "Waiting for copy to device to finish");
+#ifdef DEBUG
+	err = cudaDeviceSynchronize();
+	handleError(err, "Waiting for copy to device to finish");
+#endif
 
 	if (params->cpuLoop) {
 		int iterations = params->iterations;
 		params->iterations = 1;
 		for (int i = 0; i < iterations; i++) {
-			layout<<<nbl, nth>>>(nodes_device, edges_device, numNodes_device, params_device, finalEK_device, numGraphs);
+			layout<<<nbl, nth>>>(nodes_device, edges_device, numNodes_device, params_device, finalEK_device, nodeOffset_device, edgeOffset_device, numGraphs);
 		}
 		params->iterations = iterations;
 	} else {
-		layout<<<nbl, nth>>>(nodes_device, edges_device, numNodes_device, params_device, finalEK_device, numGraphs);
+		layout<<<nbl, nth>>>(nodes_device, edges_device, numNodes_device, params_device, finalEK_device, nodeOffset_device, edgeOffset_device, numGraphs);
 	}
 	err = cudaGetLastError();
 	handleError(err,"launching kernel");
-//	err = cudaDeviceSynchronize();
-//	handleError(err, "Waiting for layout to finish");
+
+#ifdef DEBUG
+	err = cudaDeviceSynchronize();
+	handleError(err, "Waiting for layout to finish");
+#endif
 
 	/*After computation you must copy the results back*/
 	err = cudaMemcpyAsync(nodes_host, nodes_device, sizeof(node) * lengthNodes, cudaMemcpyDeviceToHost);
@@ -495,14 +530,17 @@ void graph_layout(graph** g, int numGraphs, layout_params* params) {
 	err = cudaMemcpyAsync(finalEK_host, finalEK_device, sizeof(float) * numGraphs, cudaMemcpyDeviceToHost);
 	handleError(err, "cudaMemcpy nodes to host");
 
+	err = cudaDeviceSynchronize();
+	handleError(err, "Waiting for everything to finish");
+
 	for (int i = 0; i < numGraphs; i++) {
 		g[i]->finalEK = finalEK_host[i];
 	}
 
 	free(finalEK_host);
+	free(nodeOffset_host);
+	free(edgeOffset_host);
 
-	err = cudaDeviceSynchronize();
-	handleError(err, "Waiting for everything to finish");
 	/*
 	 All finished, free the memory now
 	 */
@@ -517,6 +555,12 @@ void graph_layout(graph** g, int numGraphs, layout_params* params) {
 
 	err = cudaFree(numNodes_device);
 	handleError(err, "cudaFree numNodes_device");
+
+	err = cudaFree(nodeOffset_device);
+	handleError(err, "cudaFree nodeOffset_device");
+
+	err = cudaFree(edgeOffset_device);
+	handleError(err, "cudaFree edgeOffset_device");
 
 	err = cudaFree(finalEK_device);
 	handleError(err, "cudaFree finalEK_device");

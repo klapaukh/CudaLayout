@@ -9,7 +9,7 @@ else
 	NCFLAGS=-gencode arch=compute_20,code=sm_20 -gencode arch=compute_20,code=sm_21
 endif
 
-OBJECTS=main.o layout.co graph.o graphmlReader.o debug.o
+OBJECTS=bitarray.o main.o layout.co graph.o graphmlReader.o debug.o
 TARGET=layout
 CC=g++
 NVCC=$(CUDADIR)/bin/nvcc
