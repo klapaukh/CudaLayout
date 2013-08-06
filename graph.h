@@ -15,7 +15,7 @@ typedef struct node {
 	unsigned char width;
 	unsigned char height;
 	float charge;
-	int label;
+	unsigned char label;
 } node;
 
 /*
