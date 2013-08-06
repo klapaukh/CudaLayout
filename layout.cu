@@ -428,7 +428,7 @@ void graph_layout(graph** g, int numGraphs, layout_params* params) {
 	printf("Compute mode: %d.%d\n", prop.major, prop.minor);
 	printf("Max grid size: (%d, %d, %d)\n", prop.maxGridSize[0], prop.maxGridSize[1], prop.maxGridSize[2]);
 	printf("Max Threads per block: %d\n", prop.maxThreadsPerBlock);
-	printf("Shared Memory Per Block: %lud\n", prop.sharedMemPerBlock);
+	printf("Shared Memory Per Block: %lu\n", prop.sharedMemPerBlock);
 
 	err = cudaDeviceReset();
 	handleError(err, "Device Reset");
