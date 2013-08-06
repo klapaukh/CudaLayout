@@ -12,8 +12,8 @@ typedef struct node {
 	float dy;
 	float nextdx;
 	float nextdy;
-	float width;
-	float height;
+	unsigned char width;
+	unsigned char height;
 	float charge;
 	int label;
 } node;
