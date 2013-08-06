@@ -7,7 +7,6 @@
 
 #ifndef DEBUG_H_
 #define DEBUG_H_
-#define DEBUG foo
 
 void debug(const char*, ...);
 

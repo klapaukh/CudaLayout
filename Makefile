@@ -16,14 +16,14 @@ NVCC=$(CUDADIR)/bin/nvcc
 FLAGS=
 CFLAGS=-pedantic -Wall -Wextra -lint -I$(CUDADIR)/include
 LDFLAGS=-Xlinker -rpath $(CUDADIR)/lib64 -L$(CUDADIR)/lib64 -lcudart -lexpat -lGL -lGLU -lglut
-NCFLAGS+=-m64 -I$(CUDADIR)/include -Xcompiler "-Wall -Wextra -lint"
+NCFLAGS+=-m64 -I$(CUDADIR)/include -Xcompiler "-Wall -Wextra -lint -DDEBUG"
 
 release: CFLAGS += -O3
 release: NCFLAGS += -O3 -use_fast_math
 release: LDFLAGS += -O3
 release: all
 
-dbg: CFLAGS += -g -pg
+dbg: CFLAGS += -g -pg -DDEBUG
 dbg: LDFLAGS += -pg
 dbg: NCFLAGS += -g -G -pg --ptxas-options=-v -Xcompiler -rdynamic -lineinfo
 dbg: all
