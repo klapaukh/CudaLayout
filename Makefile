@@ -16,7 +16,7 @@ NVCC=$(CUDADIR)/bin/nvcc
 FLAGS=
 CFLAGS=-pedantic -Wall -Wextra -lint -I$(CUDADIR)/include
 LDFLAGS=-Xlinker -rpath $(CUDADIR)/lib64 -L$(CUDADIR)/lib64 -lcudart -lexpat -lGL -lGLU -lglut
-NCFLAGS+=-m64 -I$(CUDADIR)/include -Xcompiler "-Wall -Wextra -lint -DDEBUG"
+NCFLAGS+=-m64 -I$(CUDADIR)/include -Xcompiler "-Wall -Wextra -lint"
 
 release: CFLAGS += -O3
 release: NCFLAGS += -O3 -use_fast_math
@@ -25,7 +25,7 @@ release: all
 
 dbg: CFLAGS += -g -pg -DDEBUG
 dbg: LDFLAGS += -pg
-dbg: NCFLAGS += -g -G -pg --ptxas-options=-v -Xcompiler -rdynamic -lineinfo
+dbg: NCFLAGS += -g -G -pg --ptxas-options=-v -Xcompiler -rdynamic -lineinfo -Xcompiler -DDEBUG
 dbg: all
 
 all: $(TARGET)
