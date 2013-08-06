@@ -12,9 +12,9 @@ typedef struct node {
 	float dy;
 	float nextdx;
 	float nextdy;
+	float charge;
 	unsigned char width;
 	unsigned char height;
-	float charge;
 	unsigned char label;
 } node;
 
