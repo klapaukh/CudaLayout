@@ -134,10 +134,6 @@ graph* readFile(const char* filename) {
 		return NULL;
 	}
 
-	if(data.numEdge > 254){
-		fprintf(stderr, "Num edges (%d) greater than an unsigned char\n", data.numEdge);
-		return NULL;
-	}
 	g->numNodes = data.numNode;
 	g->numEdges = data.numEdge;
 	g->numEdgeLabels = data.numEdge;

@@ -14,9 +14,9 @@ typedef struct node {
 	float nextdx;
 	float nextdy;
 	float charge;
-	unsigned char width;
-	unsigned char height;
-	unsigned char label;
+	float width;
+	float height;
+	int label;
 } node;
 
 /*
