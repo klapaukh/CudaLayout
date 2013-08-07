@@ -43,7 +43,7 @@ void usage() {
 	fprintf(stderr, " Gravity Well        - 4\n");
 
 	fprintf(stderr, "\nPrimary:\n");
-	fprintf(stderr, " Coulomb's Law        - 1\n");
+	fprintf(stderr, " Coulomb's Law       - 1\n");
 	fprintf(stderr, " Degree-Based Charge - 2\n");
 	fprintf(stderr, " Charged Edges       - 4\n");
 	fprintf(stderr, " Wrap Around Forces  - 8\n");
