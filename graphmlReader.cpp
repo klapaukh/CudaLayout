@@ -15,7 +15,7 @@ void parseDir(const char* dir, const char *internalDir, std::vector<graph*>&);
 //MAX_LEN is such that the index will fit into a 8 bits
 #define BUFF_SIZE 1024
 #define MAX_LEN 500
-#define ID_LEN 6
+#define ID_LEN 10
 
 void startTag(void*, const char*, const char**);
 void endTag(void*, const char*);
@@ -46,7 +46,7 @@ void startTag(void* data, const char* element, const char** attributes) {
 			if (strcmp(attributes[i], "id") == 0) {
 				if (graph->numNode >= MAX_LEN) {
 					printf("Too many nodes in file (%d). Greater than MAX_LEN (%d)\n", graph->numNode, MAX_LEN);
-					return;
+					exit(-1);
 				}
 				//printf("Node: %s\n", attributes[i+1]);
 				strncpy(graph->nodes[graph->numNode].id, attributes[i + 1], ID_LEN);
@@ -56,20 +56,23 @@ void startTag(void* data, const char* element, const char** attributes) {
 	} else if (strcmp(element, "edge") == 0) {
 		if (graph->numEdge >= MAX_LEN) {
 			printf("Too many edges in file (%d). Greater than MAX_LEN (%d)\n", graph->numEdge, MAX_LEN);
-			return;
+			exit(-1);
 		}
 		for (int i = 0; attributes[i] != NULL; i += 2) {
 			if (strcmp(attributes[i], "id") == 0) {
-				//printf("%d: %s: %s\n", i, attributes[i], attributes[i+1]);
+				//debug("%d: %s: %s\n", i, attributes[i], attributes[i+1]);
 				strncpy(graph->edges[graph->numEdge].id, attributes[i + 1], ID_LEN);
+        graph->edges[graph->numEdge].id[ID_LEN-1] = '\0';  //Make sure there is a null!
 			}
 			if (strcmp(attributes[i], "source") == 0) {
-				//printf("%d: Source: %s\n", i, attributes[i+1]);
+				//debug("%d: Source: %s\n", i, attributes[i+1]);
 				strncpy(graph->edges[graph->numEdge].source, attributes[i + 1], ID_LEN);
+        graph->edges[graph->numEdge].source[ID_LEN-1] = '\0';  //Make sure there is a null!
 			}
 			if (strcmp(attributes[i], "target") == 0) {
-				//printf("%d: Target: %s\n", i, attributes[i+1]);
+				//debug("%d: Target: %s\n", i, attributes[i+1]);
 				strncpy(graph->edges[graph->numEdge].target, attributes[i + 1], ID_LEN);
+        graph->edges[graph->numEdge].target[ID_LEN-1] = '\0';  //Make sure there is a null!
 			}
 		}
 		graph->numEdge++;
@@ -194,7 +197,7 @@ graph* readFile(const char* filename) {
 			}
 		}
 		if (sourceid == -1 || targetid == -1) {
-			printf("Could not find nodes for edge (%s,%s). Failed to create  graph\n", data.edges[i].source, data.edges[i].target);
+			printf("Could not find nodes for edge (%s,%s). Failed to create graph\n", data.edges[i].source, data.edges[i].target);
 			return NULL;
 		}
 		bitarray_set(g->edges,sourceid + targetid * g->numNodes, true);
@@ -288,23 +291,23 @@ void parseDir(const char* rootdir, const char * internalDir, std::vector<graph*>
 
 				debug("Reading file %s\n", filenamebuff);
 				graph* g = readFile(filenamebuff);
+        
+        if(g != NULL){
+				  if (g->filename != NULL) {
+					  free(g->filename);
+				  }
+				  if(g->dir != NULL){
+					  free(g->dir);
+				  }
 
-				if (g->filename != NULL) {
-					free(g->filename);
-				}
-				if(g->dir != NULL){
-					free(g->dir);
-				}
+				  char* fnamep = (char*)malloc(sizeof(char)*strlen(itemInDir->d_name)+1); //Extra space for null byte
+				  strcpy(fnamep, itemInDir->d_name);
+				  g->filename = fnamep;
 
-				char* fnamep = (char*)malloc(sizeof(char)*strlen(itemInDir->d_name)+1); //Extra space for null byte
-				strcpy(fnamep, itemInDir->d_name);
-				g->filename = fnamep;
+				  char* dirp = (char*)malloc(sizeof(char)*strlen(internalDir)+1); //Extra space for null byte
+				  strcpy(dirp,internalDir);
+				  g->dir = dirp;
 
-				char* dirp = (char*)malloc(sizeof(char)*strlen(internalDir)+1); //Extra space for null byte
-				strcpy(dirp,internalDir);
-				g->dir = dirp;
-
-				if (g != NULL) {
 					graphs.push_back(g);
 				}
 			} else {
