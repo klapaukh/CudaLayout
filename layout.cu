@@ -85,7 +85,7 @@ __global__ void layout(node* nodes_all, unsigned char* edges_all, int* numNodes_
 
 	node node_me = nodes[me];
 
-	if (((forcemode & (CHARGED_WALLS | BOUNCY_WALLS)) == 0) && me == 0) {
+	/*if (((forcemode & (CHARGED_WALLS | BOUNCY_WALLS)) == 0) && me == 0) {
 		//Keep the graph centered if there are no walls
 		nodes[me].x = params.width / 2;
 		nodes[me].y = params.height / 2;
@@ -96,8 +96,10 @@ __global__ void layout(node* nodes_all, unsigned char* edges_all, int* numNodes_
 		nodes_all[me].y = nodes[me].y;
 		nodes_all[me].dx = nodes[me].dx;
 		nodes_all[me].dy = nodes[me].dy;
+	  nodes_all[nodes_start + me] = nodes[me];
 		return;
-	}
+	}*/
+
 	for (int z = 0; z < params.iterations; z++) {
 		fx = fy = 0;
 
