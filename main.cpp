@@ -160,6 +160,12 @@ const char* readString(int argc, char** argv, int i) {
 int main(int argc, char** argv) {
 	/*Check arguments to make sure you got a file*/
 	//There must be at least some arguments to get a file
+    if(errno != 0){
+            perror("Unknown Error at start");
+            errno = 0;
+    }
+
+
 	const char* filename = NULL;
 	const char* outfile = NULL;
 	bool gui = false;
@@ -193,6 +199,11 @@ int main(int argc, char** argv) {
 	}
 
 	for (int i = 1; i < argc; i++) {
+    if(errno != 0){
+            fprintf(stderr, "On Iter: %d ", i);
+            perror("Unknown Error");
+            errno = 0;
+    }
 		if (strcmp(argv[i], "-f") == 0) {
 			if (filename != NULL) {
 				printf(
